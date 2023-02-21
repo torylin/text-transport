@@ -254,52 +254,5 @@ print("The probability of the sentence is:", probability)
 
 This code uses the AutoTokenizer and AutoModelForMaskedLM classes from the Transformers library to load a pre-trained model and tokenizer. It then tokenizes the input sentence using the tokenizer, passes the resulting tokens to the model, and computes the probability of the sentence by multiplying together the probabilities of the individual tokens.
 
-% In probability theory, a change of measure refers to the process of transforming a probability distribution from one measure to another. This can be useful for a variety of purposes, such as simplifying calculations, deriving new distributions, or solving certain statistical problems.
-
-% A probability measure is a mathematical function that assigns a probability to each event in a sample space. For example, in the case of a continuous probability distribution, a probability measure might be defined as a function that assigns probabilities to intervals on the real line. Different probability measures can be defined on the same sample space, and they can be related to each other through a change of measure.
-
-% One common type of change of measure is called a Radon-Nikodym derivative, which is a way of transforming a probability measure into a new measure that is equivalent in some sense. Specifically, if $\mathbb{P}$ and $\mathbb{Q}$ are two probability measures defined on the same sample space, with $\mathbb{Q}$ absolutely continuous with respect to $\mathbb{P}$, then there exists a Radon-Nikodym derivative $Z$ such that:
-
-% $$\mathbb{Q}(A) = \int_A Z d\mathbb{P}$$
-
-% for any event $A$ in the sample space. Intuitively, this means that we can define a new probability measure $\mathbb{Q}$ in terms of the original measure $\mathbb{P}$, by weighting the probabilities of each event by a factor given by the Radon-Nikodym derivative.
-
-% Change of measure can be used in various areas of probability theory, such as in stochastic calculus, finance, and statistics. For example, in financial mathematics, change of measure is used to transform a probability distribution from a historical measure (which reflects past market behavior) to a risk-neutral measure (which reflects the market's expectation of future behavior), which can be used to price financial derivatives. In statistics, change of measure can be used to transform the distribution of a statistic, for example, to derive the distribution of a test statistic under a null hypothesis.
-
-% The Horvitz-Thompson estimator is a well-known method for estimating population totals or means from survey data, when the sampling design is known. The basic idea is to weight the observed values by the inverse of the probability of selection of the sampling units, which gives an unbiased estimate of the total or mean of the population.
-
-% In some cases, the Horvitz-Thompson estimator can be improved by using a change of measure based on the Radon-Nikodym derivative. Specifically, suppose we have a sampling design where each unit has a known inclusion probability $p_i$, and we want to estimate the population mean of a variable $Y$ based on a sample of size $n$. The Horvitz-Thompson estimator for the population mean is:
-
-% $$\widehat{\mu}_{HT} = \frac{1}{n} \sum_{i \in s} \frac{Y_i}{p_i}$$
-
-% where $s$ is the set of sampled units. If we define a new probability measure $\mathbb{Q}$ as:
-
-% $$\mathbb{Q}(A) = \sum_{i \in A} \frac{1}{np_i}$$
-
-% for any event $A$ in the sample space, then we can show that $\mathbb{Q}$ is absolutely continuous with respect to the sampling design probability measure $\mathbb{P}$. This means that we can use the Radon-Nikodym derivative $Z$ to define a new set of weights $w_i$ for the sampled units, as:
-
-% $$w_i = \frac{Z_i}{np_i}$$
-
-% where $Z_i$ is the value of the Radon-Nikodym derivative for unit $i$. Intuitively, the new weights adjust the original Horvitz-Thompson weights to reflect the change of measure, and they can be used to define a new estimator for the population mean:
-
-% $$\widehat{\mu}_{QN} = \frac{\sum_{i \in s} w_i Y_i}{\sum_{i \in s} w_i}$$
-
-% This estimator is known as the Quenouille-Tukey estimator, and it has been shown to have better properties than the Horvitz-Thompson estimator in certain situations, such as when the inclusion probabilities are highly variable. However, the Radon-Nikodym derivative and the new weights are not always easy to compute in practice, and the estimator may not be robust to model misspecification or outliers. Therefore, the use of change of measure with the Horvitz-Thompson estimator should be carefully considered and justified based on the specific properties of the sampling design and the underlying population distribution.
-
-
-% Suppose we have a randomized controlled trial (RCT) with two treatment groups (treatment and control) and a binary outcome variable $Y$, indicating whether a patient recovers or not. Our estimand of interest is the average treatment effect (ATE) on the treated, which is the difference in the probabilities of recovery between the treatment group and the control group. Mathematically, the ATE on the treated is defined as:
-
-% $$\text{ATE} = \mathbb{E}[Y_i^{\text{T}} - Y_i^{\text{C}} | \text{T}_i = 1]$$
-
-% where $Y_i^{\text{T}}$ and $Y_i^{\text{C}}$ are the potential outcomes for patient $i$ under treatment and control, respectively, and $\text{T}_i$ is the treatment assignment indicator (equal to 1 for patients in the treatment group and 0 for patients in the control group). The expected value is taken over the population of patients who receive treatment, i.e., those for whom $\text{T}_i = 1$.
-
-% One common estimator for the ATE on the treated is the difference in the sample means of the outcome variable between the treatment and control groups, restricted to the treated patients. Mathematically, the estimator is given by:
-
-% $$\widehat{\text{ATE}} = \frac{1}{n_{\text{T}}} \sum_{i=1}^{n_{\text{T}}} Y_i^{\text{T}} - \frac{1}{n_{\text{C}}} \sum_{i=1}^{n_{\text{C}}} Y_i^{\text{C}}$$
-
-% where $n_{\text{T}}$ and $n_{\text{C}}$ are the sample sizes of the treatment and control groups, respectively, and the sums are taken over the treated patients (those for whom $\text{T}_i = 1$) in each group.
-
-% In this example, the estimand is the ATE on the treated, which is a theoretical quantity of interest that we want to estimate from the RCT data. The estimator is the difference in the sample means of the outcome variable between the treatment and control groups, restricted to the treated patients, which is a statistic computed from the observed data.
-
 \end{document}
  
