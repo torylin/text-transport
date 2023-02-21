@@ -1,0 +1,232 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage[parfill]{parskip}
+\usepackage{bbm}
+\usepackage{geometry}
+\geometry{margin=1in}
+\newcommand{\vl}[1]{\textcolor{red}{[VL: #1]}}
+\allowdisplaybreaks
+
+
+\title{Causal Text Notes}
+% \author{vlin2 }
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Problem setting}
+
+Consider a collection of texts (e.g., documents, sentences, utterances) $\mathcal{X}$, with individual texts $X_i \in \mathcal{X}$.
+\begin{itemize}
+    \item Let $X_i = \{g(X_i), h(X_i)\}$, where $g(X_i)$ is the text attribute of interest (i.e., the \textit{treatment}) and $h(X_i)$ denotes all other properties of the text $X_i$. 
+    \item Let $Y_i(X_i) = Y_i(g(X_i), h(X_i))$ denote the potential \textit{response} or \textit{outcome} of respondent $i$ after reading text $X_i$.
+    \item For simplicity, assume
+    \begin{itemize}
+        \item $g(X_i) \in \{0, 1\}$ $\forall$ $X_i \in \mathcal{X}$.
+        \item Each respondent reads only one text. That is, respondent $i$ reads only $X_i$.
+    \end{itemize}
+\end{itemize}
+
+We are interested in knowing the effect of the text attribute $g(X)$ on the response $Y$. Ising the standard causal notation, the \textbf{estimand} $\tau^*$ for the effect of $g(X)$ on $Y$ is given by
+\begin{equation*}
+\begin{split}
+    \tau^* &= \mathbb{E}_X[Y_i(g(X_i)=1)] - \mathbb{E}_X[Y_i(g(X_i)=0)] \\
+    &= \boxed{\sum_{b \in \mathcal{B}} \Big[ \mathbb{E}[Y_i(g(X_i)=1, h(X_i)=b)] - \mathbb{E}[Y_i(g(X_i)=0, h(X_i)=b] \Big]P(h(X_i)=b)}
+\end{split}
+\end{equation*}
+
+In stochastic notation, we can write $\tau^*$ more simply.
+\begin{itemize}
+    \item Let $P_{1 g,h}(X)$ denote a distribution such that $g(X)=1$ and $h(X) \sim P^*$, where $P^*$ is some arbitrary probability distribution.
+    \item Let $P_{0 g,h}(X)$ denote a distribution such that $g(X)=0$ and $h(X) \sim P^*$.
+    \item Let the quantity $\mu(P)$ be defined as follows:
+    \begin{equation*}
+        \begin{split}
+            \mu(P) &= E_{X_i \sim P_{g,h}}[Y_i(X_i)] \\
+            &= \frac{1}{N} \sum_{i=1}^N Y_i(X_i)P_{g,h}(X_i)
+        \end{split}
+    \end{equation*}
+\end{itemize}
+
+This allows us to express $\tau^*$ as
+\begin{equation*}
+    \boxed{\tau^* = \mu(P_1)-\mu(P_0)}
+\end{equation*}
+
+\section{Estimator}
+
+\subsection{Data setting}
+
+Suppose we have some data collected from a randomized trial, in which subjects $i \in [N]$ are shown various texts randomized over $g(X)$ and $h(X)$. These texts are constructed from individual components in a generative way. 
+\begin{itemize}
+    \item That is, to construct a text where $g(X)=1$, the text may include one of several selected sentences that are chosen to correspond to $g(X)=1$.
+    \item Likewise, for various attributes comprising $h(X)=(h_1(X), h_2(X), h_3(X), \dots)$, there may be several candidate texts that correspond to $h_1(X)=1$, several candidate texts that correspond to $h_2(X)=0$, and so on.
+\end{itemize}
+
+While we are guaranteed to be able to obtain an unbiased effect estimate for $g(X)$ from this trial (e.g., using the plug-in estimator), this type of text setting is not realistic. The effect estimate corresponds only to the effect of $g(X)$ \textit{in this specific highly artificial text setting}.
+
+Instead, we are interested in knowing the effect of $g(X)$ under a different text distribution (particularly a natural one). Again, some notation:
+
+\begin{itemize}
+    \item Let $P^R_{g,h} = P^R$ denote the \textit{randomization distribution}, or the distribution of texts as constructed in this randomized trial.
+    \item Let $P^T_{g,h} = P^T$ denote the \textit{target distribution}, or the text distribution of interest.
+    \item Let $\mathbb{P}(A) = \int_A P(X) dx$.
+    \item Using the Radon-Nikodym derivative for change of measure (see Section \ref{sec:change_of_measure}), we can write $P^T$ in terms of $P^R$ as
+    \begin{equation*}
+        P^T(X) = \frac{d\mathbb{P}^T}{d\mathbb{P}^R}(X)P^R(X)
+    \end{equation*}
+    \item Now, let $(X_i,Y_i(X_i))_{i=1}^n \sim P^R$ correspond to \textit{observed} pairs of features and outcomes sampled from the randomization distribution $P^R$.
+\end{itemize}
+
+\subsection{Horvitz-Thompson estimator}
+
+To define our effect estimate in terms of our target distribution $P^T$, we propose using the ratio between $P^T$ and $P^R$ as importance weights in an Horvitz-Thompson estimator. Using the change of measure for $P^T(X)$ we defined previously, this gives us
+\begin{equation*}
+    \begin{split}
+        \hat{\mu}(P) &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{P}^T(X_i)}{P^R(X_i)}Y_i(X_i) \\
+        &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{P^R(X_i)}{P^R(X_i)} Y_i(X_i) \\
+        &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)
+    \end{split}
+\end{equation*}
+
+We can show that $\hat{\mu}(P)$ is an unbiased estimator for $\mu(P^T)$:
+\begin{equation*}
+    \begin{split}
+        \mathbb{E}[\hat{\mu}(P)] &= \mathbb{E}_{X \sim P^R}[\hat{\mu}(P)] \\
+        &= \mathbb{E}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+        &=\frac{1}{n}\sum_{i=1}^n \mathbb{E}_{X \sim P^R}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+        &= \mathbb{E}_{X \sim P^R}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+        &=\mathbb{E}_{X \sim P^T}[Y_i(X_i)] \\
+        &= \mu(P^T)
+    \end{split}
+\end{equation*}
+
+Finally, letting $\mathcal{X}$ be the space of all texts, the variance of the estimator is given by:
+
+\begin{align*}
+    \text{Var}[\hat{\mu}(P)] &= \text{Var}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+    &= \text{Cov}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{1}{n} \sum_{j=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
+    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
+    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}, \sum_{x' \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}\right] \\
+    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x), \int_{x'}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}d\mathbb{P}^R(x')\right] \\
+    &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n \int_x \int_{x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_i)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j) \text{Cov})_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_i)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j) \text{Cov}_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_i)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j) (P^R(X_i,X_j) - P^R(X_i)P^R(X_j))d\mathbb{P}^R(x)d\mathbb{P}^R(x')
+\end{align*}
+
+where the last equality follows from
+\begin{equation*}
+    \begin{split}
+        \text{Cov}[\mathbbm{1}\{X_i=x\},\mathbbm{1}\{X_j=x'\}] &=\mathbb{E}_X[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}] - \mathbb{E}_X[\mathbbm{1}\{X_i=x\}]\mathbb{E}_X[\mathbbm{1}\{X_j=x'\}] \\
+        &= P^R(X_i,X_j) - P^R(X_i)P^R(X_j)
+    \end{split}
+\end{equation*}
+
+With CLT, we establish asymptotic normality:
+\begin{equation*}
+    \frac{\hat{\mu}(P) - \mu(P)}{\sqrt{\text{Var}[\hat{\mu}(P)]}}\rightarrow N(0,1)
+\end{equation*}
+
+which we can use to estimate confidence intervals using the following unbiased estimate for the variance.
+\begin{equation*}
+    \begin{split}
+        \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i,j \in [n]} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_i(X_i)\frac{P^R(X_i,X_j) - P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}Y_j(X_j)
+    \end{split}
+\end{equation*}
+
+\section{Experiments}
+
+\vl{Rewrite this more cleanly}
+
+We have to estimate $\frac{\hat{d\mathbb{P}^T}(X)}{d\mathbb{P}^R(X)}$. One easy way to do this is by rewriting our change of measure. Let $C$ denote the distribution from which a text is drawn, where $C=T$ denotes that it is drawn from $P^T$ and $C=R$ denotes that it is drawn from $P^R$. Then
+\begin{equation*}
+    \begin{split}
+        \frac{d\mathbb{P}^T}{d\mathbb{P}^R}(X) = \frac{P(C=T|X)}{P(C=T)}\frac{P(C=R)}{P(C=R|X)}
+    \end{split}
+\end{equation*}
+\begin{equation*}
+    \begin{split}
+        \frac{\hat{d\mathbb{P}^T}}{d\mathbb{P}^R}(X) = \frac{\hat{P}(C=T|X)}{P(C=T)}\frac{P(C=R)}{\hat{P}(C=R|X)}
+    \end{split}
+\end{equation*}
+
+where estimation of $\hat{P}(C=T|X)$ and $\hat{P}(C=R|X)$ is straightforward (by training a classifier to predict if a text $X$ came from $T$ or $R$), and $P(C=R)$ and $P(C=T)$ are known (from their sample proportions).
+
+\section{Extra notes}
+
+\subsection{Change of measure with Radon-Nikodym}
+\label{sec:change_of_measure}
+
+\vl{I asked ChatGPT to write this subsection, for the record}
+
+The Radon-Nikodym derivative can be used to express one probability density function in terms of another probability density function, when the two densities are related by a change of measure. Specifically, if we have two probability measures defined on the same sample space, with one measure $\mathbb{P}$ absolutely continuous with respect to another measure $\mathbb{Q}$, then there exists a Radon-Nikodym derivative $Z$ such that:
+
+$$\mathbb{P}(A) = \int_A Z d\mathbb{Q}$$
+
+for any event $A$ in the sample space. Intuitively, this means that we can define the probability of any event under the measure $\mathbb{P}$ in terms of the probability of the same event under the measure $\mathbb{Q}$, by weighting the probabilities by a factor given by the Radon-Nikodym derivative.
+
+Now, suppose we have two probability density functions $p(x)$ and $q(x)$ defined on some real-valued random variable $X$, with $q(x)>0$ for all $x$. We can interpret $q(x)$ as the "reference" density, and we want to express $p(x)$ in terms of $q(x)$ by a change of measure. To do this, we can define a new probability measure $\mathbb{P}$ as:
+$$\mathbb{P}(A) = \int_A \frac{p(x)}{q(x)} q(x) dx = \int_A p(x) dx$$
+
+for any event $A$ in the sample space. This means that we are weighting the probability of each event in proportion to the ratio $p(x)/q(x)$, which is a function of $x$. We can show that $\mathbb{P}$ is absolutely continuous with respect to the measure defined by $q(x)$, and therefore there exists a Radon-Nikodym derivative $Z(x)$ such that:
+$$\frac{d\mathbb{P}}{d\mathbb{Q}}(x) = Z(x) = \frac{p(x)}{q(x)}$$
+
+This means that we can express $p(x)$ in terms of $q(x)$ and the Radon-Nikodym derivative $Z(x)$, as:
+$$p(x) = Z(x) q(x)$$
+
+This is a general formula for expressing one probability density function in terms of another probability density function by a change of measure.
+
+% In probability theory, a change of measure refers to the process of transforming a probability distribution from one measure to another. This can be useful for a variety of purposes, such as simplifying calculations, deriving new distributions, or solving certain statistical problems.
+
+% A probability measure is a mathematical function that assigns a probability to each event in a sample space. For example, in the case of a continuous probability distribution, a probability measure might be defined as a function that assigns probabilities to intervals on the real line. Different probability measures can be defined on the same sample space, and they can be related to each other through a change of measure.
+
+% One common type of change of measure is called a Radon-Nikodym derivative, which is a way of transforming a probability measure into a new measure that is equivalent in some sense. Specifically, if $\mathbb{P}$ and $\mathbb{Q}$ are two probability measures defined on the same sample space, with $\mathbb{Q}$ absolutely continuous with respect to $\mathbb{P}$, then there exists a Radon-Nikodym derivative $Z$ such that:
+
+% $$\mathbb{Q}(A) = \int_A Z d\mathbb{P}$$
+
+% for any event $A$ in the sample space. Intuitively, this means that we can define a new probability measure $\mathbb{Q}$ in terms of the original measure $\mathbb{P}$, by weighting the probabilities of each event by a factor given by the Radon-Nikodym derivative.
+
+% Change of measure can be used in various areas of probability theory, such as in stochastic calculus, finance, and statistics. For example, in financial mathematics, change of measure is used to transform a probability distribution from a historical measure (which reflects past market behavior) to a risk-neutral measure (which reflects the market's expectation of future behavior), which can be used to price financial derivatives. In statistics, change of measure can be used to transform the distribution of a statistic, for example, to derive the distribution of a test statistic under a null hypothesis.
+
+% The Horvitz-Thompson estimator is a well-known method for estimating population totals or means from survey data, when the sampling design is known. The basic idea is to weight the observed values by the inverse of the probability of selection of the sampling units, which gives an unbiased estimate of the total or mean of the population.
+
+% In some cases, the Horvitz-Thompson estimator can be improved by using a change of measure based on the Radon-Nikodym derivative. Specifically, suppose we have a sampling design where each unit has a known inclusion probability $p_i$, and we want to estimate the population mean of a variable $Y$ based on a sample of size $n$. The Horvitz-Thompson estimator for the population mean is:
+
+% $$\widehat{\mu}_{HT} = \frac{1}{n} \sum_{i \in s} \frac{Y_i}{p_i}$$
+
+% where $s$ is the set of sampled units. If we define a new probability measure $\mathbb{Q}$ as:
+
+% $$\mathbb{Q}(A) = \sum_{i \in A} \frac{1}{np_i}$$
+
+% for any event $A$ in the sample space, then we can show that $\mathbb{Q}$ is absolutely continuous with respect to the sampling design probability measure $\mathbb{P}$. This means that we can use the Radon-Nikodym derivative $Z$ to define a new set of weights $w_i$ for the sampled units, as:
+
+% $$w_i = \frac{Z_i}{np_i}$$
+
+% where $Z_i$ is the value of the Radon-Nikodym derivative for unit $i$. Intuitively, the new weights adjust the original Horvitz-Thompson weights to reflect the change of measure, and they can be used to define a new estimator for the population mean:
+
+% $$\widehat{\mu}_{QN} = \frac{\sum_{i \in s} w_i Y_i}{\sum_{i \in s} w_i}$$
+
+% This estimator is known as the Quenouille-Tukey estimator, and it has been shown to have better properties than the Horvitz-Thompson estimator in certain situations, such as when the inclusion probabilities are highly variable. However, the Radon-Nikodym derivative and the new weights are not always easy to compute in practice, and the estimator may not be robust to model misspecification or outliers. Therefore, the use of change of measure with the Horvitz-Thompson estimator should be carefully considered and justified based on the specific properties of the sampling design and the underlying population distribution.
+
+
+% Suppose we have a randomized controlled trial (RCT) with two treatment groups (treatment and control) and a binary outcome variable $Y$, indicating whether a patient recovers or not. Our estimand of interest is the average treatment effect (ATE) on the treated, which is the difference in the probabilities of recovery between the treatment group and the control group. Mathematically, the ATE on the treated is defined as:
+
+% $$\text{ATE} = \mathbb{E}[Y_i^{\text{T}} - Y_i^{\text{C}} | \text{T}_i = 1]$$
+
+% where $Y_i^{\text{T}}$ and $Y_i^{\text{C}}$ are the potential outcomes for patient $i$ under treatment and control, respectively, and $\text{T}_i$ is the treatment assignment indicator (equal to 1 for patients in the treatment group and 0 for patients in the control group). The expected value is taken over the population of patients who receive treatment, i.e., those for whom $\text{T}_i = 1$.
+
+% One common estimator for the ATE on the treated is the difference in the sample means of the outcome variable between the treatment and control groups, restricted to the treated patients. Mathematically, the estimator is given by:
+
+% $$\widehat{\text{ATE}} = \frac{1}{n_{\text{T}}} \sum_{i=1}^{n_{\text{T}}} Y_i^{\text{T}} - \frac{1}{n_{\text{C}}} \sum_{i=1}^{n_{\text{C}}} Y_i^{\text{C}}$$
+
+% where $n_{\text{T}}$ and $n_{\text{C}}$ are the sample sizes of the treatment and control groups, respectively, and the sums are taken over the treated patients (those for whom $\text{T}_i = 1$) in each group.
+
+% In this example, the estimand is the ATE on the treated, which is a theoretical quantity of interest that we want to estimate from the RCT data. The estimator is the difference in the sample means of the outcome variable between the treatment and control groups, restricted to the treated patients, which is a statistic computed from the observed data.
+
+\end{document}
+ 
