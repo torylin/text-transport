@@ -5,13 +5,14 @@
 \usepackage{xcolor}
 \usepackage[parfill]{parskip}
 \usepackage{bbm}
+\usepackage{hyperref}
 \usepackage{geometry}
 \geometry{margin=1in}
 \newcommand{\vl}[1]{\textcolor{red}{[VL: #1]}}
 \allowdisplaybreaks
 
 
-\title{Causal Text Notes}
+\title{Causal Effect Estimation with Text}
 % \author{vlin2 }
 \date{}
 
@@ -32,25 +33,21 @@ Consider a collection of texts (e.g., documents, sentences, utterances) $\mathca
     \end{itemize}
 \end{itemize}
 
-We are interested in knowing the effect of the text attribute $g(X)$ on the response $Y$. Ising the standard causal notation, the \textbf{estimand} $\tau^*$ for the effect of $g(X)$ on $Y$ is given by
-\begin{equation*}
-\begin{split}
+We are interested in knowing the effect of the text attribute $g(X)$ on the response $Y$. Using the standard causal notation, the \textbf{estimand} $\tau^*$ for the effect of $g(X)$ on $Y$ is given by
+\begin{align*}
     \tau^* &= \mathbb{E}_X[Y_i(g(X_i)=1)] - \mathbb{E}_X[Y_i(g(X_i)=0)] \\
     &= \boxed{\sum_{b \in \mathcal{B}} \Big[ \mathbb{E}[Y_i(g(X_i)=1, h(X_i)=b)] - \mathbb{E}[Y_i(g(X_i)=0, h(X_i)=b] \Big]P(h(X_i)=b)}
-\end{split}
-\end{equation*}
+\end{align*}
 
-In stochastic notation, we can write $\tau^*$ more simply.
+Using stochastic notation, we can write $\tau^*$ more simply.
 \begin{itemize}
     \item Let $P_{1 g,h}(X)$ denote a distribution such that $g(X)=1$ and $h(X) \sim P^*$, where $P^*$ is some arbitrary probability distribution.
     \item Let $P_{0 g,h}(X)$ denote a distribution such that $g(X)=0$ and $h(X) \sim P^*$.
     \item Let the quantity $\mu(P)$ be defined as follows:
-    \begin{equation*}
-        \begin{split}
-            \mu(P) &= E_{X_i \sim P_{g,h}}[Y_i(X_i)] \\
-            &= \frac{1}{N} \sum_{i=1}^N Y_i(X_i)P_{g,h}(X_i)
-        \end{split}
-    \end{equation*}
+    \begin{align*}
+        \mu(P) &= E_{X_i \sim P_{g,h}}[Y_i(X_i)] \\
+        &= \frac{1}{N} \sum_{i=1}^N Y_i(X_i)P_{g,h}(X_i)
+    \end{align*}
 \end{itemize}
 
 This allows us to express $\tau^*$ as
@@ -68,9 +65,9 @@ Suppose we have some data collected from a randomized trial, in which subjects $
     \item Likewise, for various attributes comprising $h(X)=(h_1(X), h_2(X), h_3(X), \dots)$, there may be several candidate texts that correspond to $h_1(X)=1$, several candidate texts that correspond to $h_2(X)=0$, and so on.
 \end{itemize}
 
-While we are guaranteed to be able to obtain an unbiased effect estimate for $g(X)$ from this trial (e.g., using the plug-in estimator), this type of text setting is not realistic. The effect estimate corresponds only to the effect of $g(X)$ \textit{in this specific highly artificial text setting}.
+While we are guaranteed to be able to obtain an unbiased effect estimate for $g(X)$ from this trial (e.g., using the plug-in estimator), the estimate corresponds only to the effect of $g(X)$ \textit{in this specific text setting}. The type of text setting constructed in this trial is fairly artificial, and we believe that the effect may be different depending on the text setting. It is important, for example, to know if this effect still holds in natural text settings.
 
-Instead, we are interested in knowing the effect of $g(X)$ under a different text distribution (particularly a natural one). Again, some notation:
+Therefore, we are interested in knowing the effect of $g(X)$ under text distributions that are different from the initial text distribution. Again, some notation:
 
 \begin{itemize}
     \item Let $P^R_{g,h} = P^R$ denote the \textit{randomization distribution}, or the distribution of texts as constructed in this randomized trial.
@@ -85,29 +82,24 @@ Instead, we are interested in knowing the effect of $g(X)$ under a different tex
 
 \subsection{Horvitz-Thompson estimator}
 
-To define our effect estimate in terms of our target distribution $P^T$, we propose using the ratio between $P^T$ and $P^R$ as importance weights in an Horvitz-Thompson estimator. Using the change of measure for $P^T(X)$ we defined previously, this gives us
-\begin{equation*}
-    \begin{split}
-        \hat{\mu}(P) &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{P}^T(X_i)}{P^R(X_i)}Y_i(X_i) \\
-        &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{P^R(X_i)}{P^R(X_i)} Y_i(X_i) \\
-        &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)
-    \end{split}
-\end{equation*}
+To define our effect estimate in terms of our target distribution $P^T$, we propose using the ratio between $P^T$ and $P^R$ as importance weights in an Horvitz-Thompson estimator. Using the change of measure for $P^T(X)$ we defined previously, this gives us \vl{Do we need to normalize by $\frac{1}{\sum_{i=1}^n \hat{P}^T(X_i)}$ in the first line?}
+\begin{align*}
+    \hat{\mu}(P) &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{P}^T(X_i)}{P^R(X_i)}Y_i(X_i) \\
+    &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{P^R(X_i)}{P^R(X_i)} Y_i(X_i) \\
+    &=\boxed{\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)}
+\end{align*}
 
 We can show that $\hat{\mu}(P)$ is an unbiased estimator for $\mu(P^T)$:
-\begin{equation*}
-    \begin{split}
-        \mathbb{E}[\hat{\mu}(P)] &= \mathbb{E}_{X \sim P^R}[\hat{\mu}(P)] \\
-        &= \mathbb{E}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
-        &=\frac{1}{n}\sum_{i=1}^n \mathbb{E}_{X \sim P^R}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
-        &= \mathbb{E}_{X \sim P^R}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
-        &=\mathbb{E}_{X \sim P^T}[Y_i(X_i)] \\
-        &= \mu(P^T)
-    \end{split}
-\end{equation*}
+\begin{align*}
+    \mathbb{E}[\hat{\mu}(P)] &= \mathbb{E}_{X \sim P^R}[\hat{\mu}(P)] \\
+    &= \mathbb{E}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+    &=\frac{1}{n}\sum_{i=1}^n \mathbb{E}_{X \sim P^R}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+    &= \mathbb{E}_{X \sim P^R}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+    &=\mathbb{E}_{X \sim P^T}[Y_i(X_i)] \\
+    &= \mu(P^T)
+\end{align*}
 
 Finally, letting $\mathcal{X}$ be the space of all texts, the variance of the estimator is given by:
-
 \begin{align*}
     \text{Var}[\hat{\mu}(P)] &= \text{Var}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
     &= \text{Cov}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{1}{n} \sum_{j=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
@@ -120,49 +112,92 @@ Finally, letting $\mathcal{X}$ be the space of all texts, the variance of the es
 \end{align*}
 
 where the last equality follows from
-\begin{equation*}
-    \begin{split}
-        \text{Cov}[\mathbbm{1}\{X_i=x\},\mathbbm{1}\{X_j=x'\}] &=\mathbb{E}_X[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}] - \mathbb{E}_X[\mathbbm{1}\{X_i=x\}]\mathbb{E}_X[\mathbbm{1}\{X_j=x'\}] \\
-        &= P^R(X_i,X_j) - P^R(X_i)P^R(X_j)
-    \end{split}
-\end{equation*}
+\begin{align*}
+    \text{Cov}[\mathbbm{1}\{X_i=x\},\mathbbm{1}\{X_j=x'\}] &=\mathbb{E}_X[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}] - \mathbb{E}_X[\mathbbm{1}\{X_i=x\}]\mathbb{E}_X[\mathbbm{1}\{X_j=x'\}] \\
+    &= P^R(X_i,X_j) - P^R(X_i)P^R(X_j)
+\end{align*}
 
-With CLT, we establish asymptotic normality:
+With the central limit theorem (CLT), we establish asymptotic normality:
 \begin{equation*}
     \frac{\hat{\mu}(P) - \mu(P)}{\sqrt{\text{Var}[\hat{\mu}(P)]}}\rightarrow N(0,1)
 \end{equation*}
 
 which we can use to estimate confidence intervals using the following unbiased estimate for the variance.
 \begin{equation*}
-    \begin{split}
-        \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i,j \in [n]} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_i(X_i)\frac{P^R(X_i,X_j) - P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}Y_j(X_j)
-    \end{split}
+    \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i,j \in [n]} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_i(X_i)\frac{P^R(X_i,X_j) - P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}Y_j(X_j)
 \end{equation*}
 
-\section{Experiments}
+\section{Empirical estimation}
+\subsection{Estimating $\hat{P}^T$ from the data}
 
-\vl{Rewrite this more cleanly}
+Our estimator has one primary nuisance parameter, $\frac{\hat{d\mathbb{P}^T}(X)}{d\mathbb{P}^R(X)}$ (or $\hat{P}^T(X)$, depending on the version of the estimator we want to use). We propose several approaches for estimating this quantity.
 
-We have to estimate $\frac{\hat{d\mathbb{P}^T}(X)}{d\mathbb{P}^R(X)}$. One easy way to do this is by rewriting our change of measure. Let $C$ denote the distribution from which a text is drawn, where $C=T$ denotes that it is drawn from $P^T$ and $C=R$ denotes that it is drawn from $P^R$. Then
+\subsubsection{Classification}
+\label{sec:classification}
+
+We notice that we can rewrite $\frac{d\mathbb{P}^T}{d\mathbb{P}^R}$. Let $C$ denote the distribution (or corpus) from which a text is drawn, where $C=T$ denotes that it is drawn from $P^T$ and $C=R$ denotes that it is drawn from $P^R$. Then
 \begin{equation*}
     \begin{split}
-        \frac{d\mathbb{P}^T}{d\mathbb{P}^R}(X) = \frac{P(C=T|X)}{P(C=T)}\frac{P(C=R)}{P(C=R|X)}
-    \end{split}
-\end{equation*}
-\begin{equation*}
-    \begin{split}
-        \frac{\hat{d\mathbb{P}^T}}{d\mathbb{P}^R}(X) = \frac{\hat{P}(C=T|X)}{P(C=T)}\frac{P(C=R)}{\hat{P}(C=R|X)}
+        &\frac{d\mathbb{P}^T}{d\mathbb{P}^R}(X) = \frac{P(C=T|X)}{P(C=T)}\frac{P(C=R)}{P(C=R|X)}\\
+        \Rightarrow &\frac{\hat{d\mathbb{P}^T}}{d\mathbb{P}^R}(X) = \frac{\hat{P}(C=T|X)}{\hat{P}(C=T)}\frac{\hat{P}(C=R)}{\hat{P}(C=R|X)}
     \end{split}
 \end{equation*}
 
-where estimation of $\hat{P}(C=T|X)$ and $\hat{P}(C=R|X)$ is straightforward (by training a classifier to predict if a text $X$ came from $T$ or $R$), and $P(C=R)$ and $P(C=T)$ are known (from their sample proportions).
+where estimation of $\hat{P}(C=T|X)$ and $\hat{P}(C=R|X)$ is straightforward---we can train a binary classifier $M_\theta: \mathcal{X} \rightarrow \{0,1\}$ to predict if a text $X$ came from $T$ or $R$---and $\hat{P}(C=R)$ and $\hat{P}(C=T)$ are estimated from their sample proportions.
+
+We have several options for our binary classifier:
+\begin{enumerate}
+    \item A model that takes ``interpretable'' language features as input (e.g., bag-of-words, lexicon, SenteCon). We train a ``simple'' classifier over these features (e.g., logistic regression, SVM).
+    \item A deep language model that takes raw text as input. We can either use a pre-trained model, or we can fine-tune the pre-trained model using masked language modeling (MLM) on text examples drawn from $P^T$.
+\end{enumerate}
+
+\subsubsection{Deep language tasks}
+
+Deep language models like transformers are capable of directly computing the probability of a sentence (see Section \ref{sec:huggingface_sentence_probs}), even if the model has never seen the sentence before. This probability is based on the text distribution used to train the model. Since the state-of-the-art language models are pre-trained on extremely large corpora that approximate the entirety of the English language, we must further fine-tune before we can use them to compute sentence probabilities for $P^T$.
+
+Several tasks that may be useful for encouraging a language model $M_\theta$ to learn $P^T$:
+\begin{itemize}
+    \item MLM: Mentioned in Section \ref{sec:classification}. We draw text examples from $P^T$. For each sentence, certain words are masked, and $M_\theta$ learns to predict them.
+    \item Causal language modeling (CLM)/text generation: Again, we drawn text samples from $P^T$. For each sentence, starting from the first word, $M_\theta$ learns to predict the next word.
+    \item Style transfer: Given a text example drawn from $P^R$, $M_\theta$ reproduces that same text example ``in the style of'' $P^T$. This task requires $M_\theta$ to be a sequence-to-sequence language model, like \href{https://arxiv.org/pdf/1910.13461.pdf}{BART}, and for best results, parallel text examples from $P^R$ and $P^T$ should be available.
+\end{itemize}
+
+For a practical example of MLM and CLM, see \href{https://huggingface.co/docs/transformers/tasks/language_modeling}{this example from HuggingFace}. For some ideas on how to fine-tune BART on a style transfer task, see \href{https://blog.fastforwardlabs.com/2022/05/05/neutralizing-subjectivity-bias-with-huggingface-transformers.html}{this blog post} and \href{https://arxiv.org/pdf/2105.06947.pdf}{this paper}.
+
+\subsection{Estimating $\hat{\mu}(P)$ from the data}
+
+We estimate the overall quantity of interest $\hat{\tau}$ through the following procedure. Suppose we have samples $(X_i,Y_i)_{i=1}^n \sim P^R$. In our experiments, these samples are from this \href{https://onlinelibrary.wiley.com/doi/full/10.1111/ajps.12649}{2021 Fong and Grimmer paper}. The authors conduct a randomized study on the effects of a text attribute $g(X)$ on an outcome $Y$ in a constructed text setting, which we consider to be distributed $P^R$.
+\begin{enumerate}
+    \item Sample examples from $P^T$. Train $M_\theta$ on these examples to be able to obtain $\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)$ or $\hat{P}^T(X_i)$ $\forall$ $i \in [n]$.
+    \begin{itemize}
+        \item In our experiments, these examples from $P^T$ constitute 2-3 sentence chunks drawn from the U.S. Congressional speeches on the Hong Kong protests. We consider these to be the ``natural language counterparts'' of the examples from $P^R$.
+    \end{itemize}
+    \item (If using $P^T$) $P^R(X_i)$ should be known from the design of the randomized study. In the worst case, it can be computed empirically from sample proportions.
+    \item Split $(X_i,Y_i)$ according to samples where $g(X_i)=1$ and where $g(X_i)=0$. Call these data splits $D_1$ and $D_0$, respectively.
+    \item Compute
+    \begin{equation*}
+    \begin{split}
+        \hat{\tau} &= \hat{\mu}(P_1) - \hat{\mu}(P_0) \\
+        &= \frac{1}{|D_1|} \sum_{j \in D_1} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j - \frac{1}{|D_0|} \sum_{k \in D_0} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_k)Y_k \\
+        &= \frac{1}{|D_1|} \sum_{j \in D_1} \frac{\hat{P}(C=T|X_j)}{\hat{P}(C=T)}\frac{\hat{P}(C=R)}{\hat{P}(C=R|X_j)}
+    \end{split}
+    \end{equation*}
+    or alternatively
+    \begin{equation*}
+    \begin{split}
+        \hat{\tau} &= \hat{\mu}(P_1) - \hat{\mu}(P_0) \\
+        &= \frac{1}{|D_1|} \sum_{j \in D_1} \frac{\hat{P}^T(X_j)}{P^R(X_j)\sum_{i=1}^n \hat{P}^T(X_i)}Y_j - \frac{1}{|D_0|} \sum_{k \in D_0} \frac{\hat{P}^T(X_k)}{P^R(X_k)\sum_{i=1}^n \hat{P}^T(X_i)}Y_k
+    \end{split}
+    \end{equation*}
+    \vl{Is the normalization just to ensure that $\hat{P}^T$ sums to 1 over $X_i \sim P^R$?}
+\end{enumerate}
 
 \section{Extra notes}
 
-\subsection{Change of measure with Radon-Nikodym}
-\label{sec:change_of_measure}
+\vl{These two subsections were generated using ChatGPT and are mostly for my own reference.}
 
-\vl{I asked ChatGPT to write this subsection, for the record}
+\subsection{Change of measure with Radon-Nikodym derivatives}
+\label{sec:change_of_measure}
 
 The Radon-Nikodym derivative can be used to express one probability density function in terms of another probability density function, when the two densities are related by a change of measure. Specifically, if we have two probability measures defined on the same sample space, with one measure $\mathbb{P}$ absolutely continuous with respect to another measure $\mathbb{Q}$, then there exists a Radon-Nikodym derivative $Z$ such that:
 
@@ -180,6 +215,44 @@ This means that we can express $p(x)$ in terms of $q(x)$ and the Radon-Nikodym d
 $$p(x) = Z(x) q(x)$$
 
 This is a general formula for expressing one probability density function in terms of another probability density function by a change of measure.
+
+\subsection{Sentence probabilities from deep language models}
+\label{sec:huggingface_sentence_probs}
+
+To get the probability of a sentence from a HuggingFace transformers model, you first need to convert the sentence into a format that the model can understand. Typically, this involves tokenizing the sentence into a sequence of subwords, which is done using the tokenizer that corresponds to the pre-trained model you are using.
+
+Once you have tokenized the sentence, you can pass it to the model to get the probability distribution over the possible output tokens. The probability of the sentence can be computed as the product of the probabilities of each individual token in the sequence.
+
+Here's an example of how to get the probability of a sentence using the HuggingFace Transformers library in Python:
+
+\begin{verbatim}
+from transformers import pipeline, AutoTokenizer, AutoModelForMaskedLM
+import torch
+
+# Load the pre-trained model and tokenizer
+model_name = "distilbert-base-uncased"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForMaskedLM.from_pretrained(model_name)
+
+# Define the input sentence
+input_sentence = "The cat sat on the mat."
+
+# Tokenize the input sentence
+tokens = tokenizer.encode(input_sentence, return_tensors="pt")
+
+# Get the probability distribution over the tokens
+outputs = model(tokens)
+predictions = torch.nn.functional.softmax(outputs.logits, dim=-1)
+
+# Compute the probability of the sentence
+probability = 1.0
+for i in range(1, len(tokens[0])):
+    probability *= predictions[0, i, tokens[0, i]].item()
+
+print("The probability of the sentence is:", probability)
+\end{verbatim}
+
+This code uses the AutoTokenizer and AutoModelForMaskedLM classes from the Transformers library to load a pre-trained model and tokenizer. It then tokenizes the input sentence using the tokenizer, passes the resulting tokens to the model, and computes the probability of the sentence by multiplying together the probabilities of the individual tokens.
 
 % In probability theory, a change of measure refers to the process of transforming a probability distribution from one measure to another. This can be useful for a variety of purposes, such as simplifying calculations, deriving new distributions, or solving certain statistical problems.
 
