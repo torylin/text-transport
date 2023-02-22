@@ -76,19 +76,23 @@ Therefore, we are interested in knowing the effect of $g(X)$ under text distribu
     \begin{equation*}
         P^T(X) = \frac{d\mathbb{P}^T}{d\mathbb{P}^R}(X)P^R(X)
     \end{equation*}
+    \begin{itemize}
+        \item We require the \href{https://en.wikipedia.org/wiki/Absolute_continuity#Absolute_continuity_of_measures}{absolute continuity} of $\mathbb{P}^T$ with respect to  $\mathbb{P}^R$, such that $P^R(X) = 0 \Rightarrow P^R(X) = 0$.
+    \end{itemize}
     \item Now, let $(X_i,Y_i(X_i))_{i=1}^n \sim P^R$ correspond to \textit{observed} pairs of features and outcomes sampled from the randomization distribution $P^R$.
 \end{itemize}
 
 \subsection{Horvitz-Thompson estimator}
 
-To define our effect estimate in terms of our target distribution $P^T$, we propose using the ratio between $P^T$ and $P^R$ as importance weights in an Horvitz-Thompson estimator. Using the change of measure for $P^T(X)$ we defined previously, this gives us \vl{Do we need to normalize by $\frac{1}{\sum_{i=1}^n \hat{P}^T(X_i)}$ in the first line?}
+To define our effect estimate in terms of our target distribution $P^T$, we propose using the ratio between $P^T$ and $P^R$ as importance weights in an Horvitz-Thompson estimator. Using the change of measure for $P^T(X)$ we defined previously, this gives us 
+% \vl{Do we need to normalize by $\frac{1}{\sum_{i=1}^n \hat{P}^T(X_i)}$ in the first line?}
 \begin{align*}
-    \hat{\mu}(P) &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{P}^T(X_i)}{P^R(X_i)}Y_i(X_i) \\
+    \hat{\mu}(P^T) &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{P}^T(X_i)}{P^R(X_i)}Y_i(X_i) \\
     &= \frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{P^R(X_i)}{P^R(X_i)} Y_i(X_i) \\
     &=\boxed{\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)}
 \end{align*}
 
-We can show that $\hat{\mu}(P)$ is an unbiased estimator for $\mu(P^T)$:
+We can show that $\hat{\mu}(P^T)$ is an unbiased estimator for $\mu(P^T)$:
 \begin{align*}
     \mathbb{E}[\hat{\mu}(P)] &= \mathbb{E}_{X \sim P^R}[\hat{\mu}(P)] \\
     &= \mathbb{E}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
@@ -138,21 +142,21 @@ We notice that we can rewrite $\frac{d\mathbb{P}^T}{d\mathbb{P}^R}$. Let $C$ den
 \begin{equation*}
     \begin{split}
         &\frac{d\mathbb{P}^T}{d\mathbb{P}^R}(X) = \frac{P(C=T|X)}{P(C=T)}\frac{P(C=R)}{P(C=R|X)}\\
-        \Rightarrow &\frac{\hat{d\mathbb{P}^T}}{d\mathbb{P}^R}(X) = \frac{\hat{P}(C=T|X)}{\hat{P}(C=T)}\frac{\hat{P}(C=R)}{\hat{P}(C=R|X)}
+        \Rightarrow &\frac{\hat{d\mathbb{P}^T}}{d\mathbb{P}^R}(X) = \frac{\hat{P}(C=T|X)}{P(C=T)}\frac{P(C=R)}{\hat{P}(C=R|X)}
     \end{split}
 \end{equation*}
 
-where estimation of $\hat{P}(C=T|X)$ and $\hat{P}(C=R|X)$ is straightforward---we can train a binary classifier $M_\theta: \mathcal{X} \rightarrow \{0,1\}$ to predict if a text $X$ came from $T$ or $R$---and $\hat{P}(C=R)$ and $\hat{P}(C=T)$ are estimated from their sample proportions.
+where estimation of $\hat{P}(C=T|X)$ and $\hat{P}(C=R|X)$ is straightforward---we can train a binary classifier $M_\theta: \mathcal{X} \rightarrow \{0,1\}$ to predict if a text $X$ came from $T$ or $R$---and $P(C=R)$ and $P(C=T)$ are their sample proportions over the entire body of text.
 
 We have several options for our binary classifier:
-\begin{enumerate}
+\begin{itemize}
     \item A model that takes ``interpretable'' language features as input (e.g., bag-of-words, lexicon, SenteCon). We train a ``simple'' classifier over these features (e.g., logistic regression, SVM).
     \item A deep language model that takes raw text as input. We can either use a pre-trained model, or we can fine-tune the pre-trained model using masked language modeling (MLM) on text examples drawn from $P^T$.
-\end{enumerate}
+\end{itemize}
 
-\subsubsection{Deep language tasks}
+\subsubsection{Language tasks}
 
-Deep language models like transformers are capable of directly computing the probability of a sentence (see Section \ref{sec:huggingface_sentence_probs}), even if the model has never seen the sentence before. This probability is based on the text distribution used to train the model. Since the state-of-the-art language models are pre-trained on extremely large corpora that approximate the entirety of the English language, we must further fine-tune before we can use them to compute sentence probabilities for $P^T$.
+Language models like transformers are capable of directly computing the probability of a sentence (see Section \ref{sec:huggingface_sentence_probs}), even if the model has never seen the sentence before. This probability is based on the text distribution used to train the model. Since the state-of-the-art language models are pre-trained on extremely large corpora that approximate the entirety of the English language, we must further fine-tune before we can use them to compute sentence probabilities for $P^T$.
 
 Several tasks that may be useful for encouraging a language model $M_\theta$ to learn $P^T$:
 \begin{itemize}
@@ -166,10 +170,11 @@ For a practical example of MLM and CLM, see \href{https://huggingface.co/docs/tr
 \subsection{Estimating $\hat{\mu}(P)$ from the data}
 
 We estimate the overall quantity of interest $\hat{\tau}$ through the following procedure. Suppose we have samples $(X_i,Y_i)_{i=1}^n \sim P^R$. In our experiments, these samples are from this \href{https://onlinelibrary.wiley.com/doi/full/10.1111/ajps.12649}{2021 Fong and Grimmer paper}. The authors conduct a randomized study on the effects of a text attribute $g(X)$ on an outcome $Y$ in a constructed text setting, which we consider to be distributed $P^R$.
+
 \begin{enumerate}
     \item Sample examples from $P^T$. Train $M_\theta$ on these examples to be able to obtain $\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)$ or $\hat{P}^T(X_i)$ $\forall$ $i \in [n]$.
     \begin{itemize}
-        \item In our experiments, these examples from $P^T$ constitute 2-3 sentence chunks drawn from the U.S. Congressional speeches on the Hong Kong protests. We consider these to be the ``natural language counterparts'' of the examples from $P^R$.
+        \item[--] In our experiments, these examples from $P^T$ constitute 2-3 sentence chunks drawn from the U.S. Congressional speeches on the Hong Kong protests. We consider these to be the ``natural language counterparts'' of the examples from $P^R$.
     \end{itemize}
     \item (If using $P^T$) $P^R(X_i)$ should be known from the design of the randomized study. In the worst case, it can be computed empirically from sample proportions.
     \item Split $(X_i,Y_i)$ according to samples where $g(X_i)=1$ and where $g(X_i)=0$. Call these data splits $D_1$ and $D_0$, respectively.
@@ -177,18 +182,20 @@ We estimate the overall quantity of interest $\hat{\tau}$ through the following 
     \begin{equation*}
     \begin{split}
         \hat{\tau} &= \hat{\mu}(P_1) - \hat{\mu}(P_0) \\
-        &= \frac{1}{|D_1|} \sum_{j \in D_1} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j - \frac{1}{|D_0|} \sum_{k \in D_0} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_k)Y_k \\
-        &= \frac{1}{|D_1|} \sum_{j \in D_1} \frac{\hat{P}(C=T|X_j)}{\hat{P}(C=T)}\frac{\hat{P}(C=R)}{\hat{P}(C=R|X_j)}
+        &= \frac{1}{nP(g(X)=1)} \sum_{j \in D_1} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j - \frac{1}{nP(g(X)=0)} \sum_{k \in D_0} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_k)Y_k \\
+        &= \frac{1}{nP(g(X)=1)} \sum_{j \in D_1} \frac{\hat{P}(C=T|X_j)}{P(C=T)}\frac{P(C=R)}{\hat{P}(C=R|X_j)} - \frac{1}{nP(g(X)=0)} \sum_{k \in D_0} \frac{\hat{P}(C=T|X_k)}{P(C=T)}\frac{P(C=R)}{\hat{P}(C=R|X_k)}
     \end{split}
     \end{equation*}
-    or alternatively
+    or alternatively (to ensure that the absolute continuity condition holds, we restrict $P^T$ with respect to the support of the randomization distribution, such that $P^T(X) = \frac{P^T(\tilde{X})\mathbbm{1}\{\tilde{X} \in C^R\}}{\sum_{i=1}^n P^T(X_i)}$)
     \begin{equation*}
     \begin{split}
         \hat{\tau} &= \hat{\mu}(P_1) - \hat{\mu}(P_0) \\
-        &= \frac{1}{|D_1|} \sum_{j \in D_1} \frac{\hat{P}^T(X_j)}{P^R(X_j)\sum_{i=1}^n \hat{P}^T(X_i)}Y_j - \frac{1}{|D_0|} \sum_{k \in D_0} \frac{\hat{P}^T(X_k)}{P^R(X_k)\sum_{i=1}^n \hat{P}^T(X_i)}Y_k
+        &= \frac{1}{n P(g(X)=1)} \sum_{j \in D_1} \frac{\hat{P}^T(X_j)}{P^R(X_j)\sum_{i=1}^n \hat{P}^T(X_i)}Y_j - \frac{1}{nP(g(X)=0)} \sum_{k \in D_0} \frac{\hat{P}^T(X_k)}{P^R(X_k)\sum_{i=1}^n \hat{P}^T(X_i)}Y_k
     \end{split}
     \end{equation*}
-    \vl{Is the normalization just to ensure that $\hat{P}^T$ sums to 1 over $X_i \sim P^R$?}
+    % \vl{Is the normalization just to ensure that $\hat{P}^T$ sums to 1 over $X_i \sim P^R$?}
+
+    Note that $P(g(X)=1)$ and $P(g(X)=0)$ are defined over the entire randomization corpus (i.e., every possible permutation of the statements/linguistic attributes in the HK study), prior to sampling. In practical terms, this means they are computed from the  proportions of the randomization corpus, rather than the  proportions of the sampled data (i.e., the data for which we have measured outcomes).
 \end{enumerate}
 
 \section{Extra notes}
