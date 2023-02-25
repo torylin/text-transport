@@ -84,8 +84,6 @@ est = mu1-mu0
 # print(mu0)
 # print(mu1-mu0)
 
-# blah
-
 val_list = []
 for i in tqdm(range(df_random_test.shape[0])):
     for j in range(df_random_test.shape[0]):
