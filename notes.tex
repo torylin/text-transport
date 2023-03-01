@@ -10,7 +10,8 @@
 \usepackage[dvipsnames]{xcolor}
 \usepackage{geometry}
 \geometry{margin=1in}
-\newcommand{\vl}[1]{\textcolor{red}{[VL: #1]}}
+\newcommand{\vl}[1]{\textcolor{orange}{[VL: #1]}}
+\newcommand{\eli}[1]{\textcolor{orange}{[Eli: #1]}}
 \allowdisplaybreaks
 
 \title{Causal Effect Estimation with Text}
@@ -114,7 +115,7 @@ Finally, letting $\mathcal{X}$ be the space of all texts, the variance of the es
     &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_i)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j) \text{Cov}_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
     &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_i)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j) (P^R(X_i,X_j) - P^R(X_i)P^R(X_j))d\mathbb{P}^R(x)d\mathbb{P}^R(x')
 \end{align*}
-
+\eli{I think this generally gets to the right place, but e.g. the inner term in some of those covariances should be $\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x)$, so that only $\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x)$ is random}
 where the last equality follows from
 \begin{align*}
     \text{Cov}[\mathbbm{1}\{X_i=x\},\mathbbm{1}\{X_j=x'\}] &=\mathbb{E}_X[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}] - \mathbb{E}_X[\mathbbm{1}\{X_i=x\}]\mathbb{E}_X[\mathbbm{1}\{X_j=x'\}] \\
