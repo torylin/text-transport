@@ -49,4 +49,4 @@ for filename in os.listdir(os.path.join(args.data_dir, 'hk_speeches', 'text')):
     sent_groups += get_sent_groups(text, range(2, 8), sample_sent_probs, args.seed)
 
 df = pd.DataFrame({'text_full': sent_groups})
-df.to_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_corpus.csv'))
+df.to_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_corpus.csv'), index=False)
