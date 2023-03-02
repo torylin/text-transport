@@ -7,7 +7,6 @@
 \usepackage{bbm}
 \usepackage{hyperref}
 \usepackage{booktabs}
-\usepackage[dvipsnames]{xcolor}
 \usepackage{geometry}
 \geometry{margin=1in}
 \newcommand{\vl}[1]{\textcolor{orange}{[VL: #1]}}
@@ -132,18 +131,29 @@ which we can use to estimate confidence intervals using the following unbiased e
     \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i,j \in [n]} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j)\frac{P^R(X_i,X_j) - P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
 \end{equation*}
 
+\vl{The last fraction of the variance is 0 unless $i=j$, in which case it becomes $$\frac{P^R(X_i,X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_i)} = \frac{P^R(X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i)} = 1-P^R(X_j)$$
+which is nonzero.}
+
 \vl{Do we compute variance estimates separately for $\hat{\mu}(P_1)$ and $\hat{\mu}(P_1)$, then compute $$\widehat{\text{Var}}(\hat{\tau})=\frac{\widehat{\text{Var}}[\hat{\mu}(P_1)]}{n^2P(g(X)=1)^2} + \frac{\widehat{\text{Var}}[\hat{\mu}(P_0)]}{n^2P(g(X)=0)^2}$$ Or do we use this variance estimate over the whole sample to directly get $\widehat{\text{Var}}(\hat{\tau})$?}
 
 \section{Empirical estimation}
 \subsection{Estimating $\hat{P}^T$ from the data}
 
-\vl{Should we ever use the full randomization corpus (i.e., all possible 2- or 3-attribute permutations of candidate sentences from the HK study) as $P^R$, or do we always consider $P^R$ to be the sample (i.e., the data for which we have measured outcomes)? This is relevant because the distributions are not the same---the reason being that there are different numbers of candidate sentences for each text attribute, so a full set of permutations is not uniform over the confounding attributes.}
+\vl{QUESTION: Should we ever use the full randomization corpus (i.e., all possible 2- or 3-attribute permutations of candidate sentences from the HK study) as $P^R$, or do we always consider $P^R$ to be the sample (i.e., the data for which we have measured outcomes)? This is relevant because the distributions are not the same---the reason being that there are different numbers of candidate sentences for each text attribute, so a full set of permutations is not uniform over the confounding attributes. 
+
+\newline
+\newline
+
+ANSWER: Instead of getting all possible permutations, get the full randomization distribution by just sampling a large number of texts according to the way Fong \& Grimmer sampled theirs. That is, first sample attributes, then sample sentences from those attributes.}
 
 \vl{As a related question, should the distribution of number of sentences per text in $P^T$ follow sample $P^R$ or full-corpus $P^R$?}
 
 Our estimator has one primary nuisance parameter, $\frac{\hat{d\mathbb{P}^T}(X)}{d\mathbb{P}^R(X)}$ (or $\hat{P}^T(X)$, depending on the version of the estimator we want to use). We propose several approaches for estimating this quantity.
 
-\vl{Is sample splitting necessary when learning the nuisance parameter? For now, I have split off a very small sample (10\% of the data) for training the classifier.}
+\vl{QUESTION: Is sample splitting necessary when learning the nuisance parameter? For now, I have split off a very small sample (10\% of the data) for training the classifier.
+\newline
+\newline
+ANSWER: Maybe?}
 
 \subsubsection{Classification}
 \label{sec:classification}
@@ -212,9 +222,36 @@ We estimate the overall quantity of interest $\hat{\tau}$ through the following 
     % \vl{Is the normalization just to ensure that $\hat{P}^T$ sums to 1 over $X_i \sim P^R$?}
     
     Note that $P(g(X)=1)$ and $P(g(X)=0)$ are defined over the entire randomization corpus (i.e., every possible permutation of the statements/linguistic attributes in the HK study), prior to sampling. In practical terms, this means they are computed from the  proportions of the randomization corpus, rather than the  proportions of the sampled data (i.e., the data for which we have measured outcomes).
+    \item In practice, to maintain the stability of the weights (which can be very small), we use the \href{https://cran.r-project.org/web/packages/sampling/vignettes/HT_Hajek_estimators.pdf}{Hajek estimator} instead of the Horvitz-Thompson estimator. With the Hajek estimator, the importance weights are normalized by the \textit{average} importance weight, which yields the following estimators:
+    \begin{equation*}
+        \hat{\tau} = \frac{1}{|D_1|} \sum_{j \in D_1} \hat{\gamma}_j Y_j - \frac{1}{|D_0|} \sum_{k \in D_0} \hat{\gamma}_k Y_k
+    \end{equation*}
+    
+    \begin{equation*}
+        \widehat{\text{Var}}[\hat{\mu}(P_1)] = \frac{1}{|D_1|^2} \sum_{i,j \in D_1} \hat{\gamma}_i \hat{\gamma}_j (Y_i-\bar{Y}_{D_1})(Y_j-\bar{Y}_{D_1}) \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
+    \end{equation*}
+    
+    \begin{equation*}
+        \widehat{\text{Var}}[\hat{\mu}(P_0)] = \frac{1}{|D_0|^2} \sum_{i,j \in D_0} \hat{\gamma}_i \hat{\gamma}_j (Y_i-\bar{Y}_{D_0})(Y_j-\bar{Y}_{D_0}) \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
+    \end{equation*}
+
+    \vl{Not totally sure about this, but I thought we would have to subtract out the mean $Y$ so that the variance doesn't blow up with large $Y$?}
+    
+    \begin{equation*}
+        \widehat{\text{Var}}[\hat{\tau}] = \widehat{\text{Var}}[\hat{\mu}(P_1)] + \widehat{\text{Var}}[\hat{\mu}(P_0)]
+    \end{equation*}
+    
+    where for the classification approach,
+    \begin{equation*}
+        \hat{\gamma}_j = \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j) \Bigg/ \left(\frac{1}{|D|} \sum_{j \in D} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)\right)
+    \end{equation*}
+    and for the language modeling approach,
+    \begin{equation*}
+        \hat{\gamma}_j = \frac{\hat{P}^T(X_j)}{P^R(X_j)\sum_{i=1}^n \hat{P}^T(X_i)} \Bigg/ \left(\frac{1}{|D|} \sum_{j \in D} \frac{\hat{P}^T(X_j)}{P^R(X_j)\sum_{i=1}^n \hat{P}^T(X_i)} \right)
+    \end{equation*}
 \end{enumerate}
 
-\vl{Is there any reason Fong & Grimmer used linear regression to estimate the effects instead of difference-in-means? I also implemented the option of LR on weight-adjusted $Y_i$s, but I've left the results out of the document (they do look different though).}
+% \vl{Is there any reason Fong \& Grimmer used linear regression to estimate the effects instead of difference-in-means? I also implemented the option of LR on weight-adjusted $Y_i$s, but I've left the results out of the document (they do look different though).}
 
 \section{Experiments}
 
@@ -241,6 +278,8 @@ Our target corpus $P^T$ is derived from the U.S. Congressional speeches on the H
 
 \subsection{Results}
 
+\vl{The estimates for $\hat{\mu}$ and $\hat{\tau}$ look pretty reasonable, but need to figure out why the variance estimates are so large / why the CIs are so wide.}
+
 \subsubsection{Classification approach}
 
 We report our treatment effect estimates using the classification approach described in Section \ref{sec:classification}. For each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_clf1}, the classifier is a logistic regression model, and the language representations are embeddings from the pre-trained large language model MPNet. In Table \ref{tab:results_clf2}, the classifier and language representations remain the same, but text probabilities are computed as a marginal product of the individual sentence probabilities. Variance is computed as a sum of $\widehat{\text{Var}}[\hat{\mu}(P_1)]$ and $\widehat{\text{Var}}[\hat{\mu}(P_0)]$.
@@ -251,13 +290,13 @@ We report our treatment effect estimates using the classification approach descr
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 1.537 & 2.271 & \textcolor{red!80!black}{\textbf{-0.733}} & [-0.864, -0.602] \\
-        Bravery & 2.468 & 1.224 & \textcolor{green!50!black}{\textbf{1.244}} & [1.112, 1.376] \\
-        Mistreatment & 0.727 & 2.285 & \textcolor{red!80!black}{\textbf{-1.558}} & [-1.673, -1.444] \\
-        Flags & 1.153 & 1.910 & \textcolor{red!80!black}{\textbf{-0.757}} & [-0.863, -0.650] \\
-        Threat & 1.134 & 2.045 & \textcolor{red!80!black}{\textbf{-0.911}} & [-1.023, -0.799] \\
-        Economy & 0.650 & 2.175 & \textcolor{red!80!black}{\textbf{-1.525}} & [-1.633, -1.416] \\
-        Violation & 0.613 & 2.317 & \textcolor{red!80!black}{\textbf{-1.703}} & [-1.818, -1.589] \\
+        Commitment & 69.528 & 67.087 & \textcolor{green!50!black}{2.441} & [-7.458, 12.340] \\
+        Bravery & 68.384 & 69.487 & \textcolor{red!80!black}{-1.103} & [-12.662, 10.457] \\
+        Mistreatment & 69.570 & 68.757 & \textcolor{green!50!black}{0.813} & [-7.262, 8.887] \\
+        Flags & 67.572 & 69.264 & \textcolor{red!80!black}{-1.692} & [-11.533, -8.149] \\
+        Threat & 67.530 & 69.428 & \textcolor{red!80!black}{-1.898} & [-11.716, -7.922] \\
+        Economy & 65.507 & 69.419 & \textcolor{red!80!black}{-3.912} & [-14.135, 6.312] \\
+        Violation & 66.729 & 69.255 & \textcolor{red!80!black}{-2.526} & [-11.122, 6.070] \\
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet.}
@@ -270,24 +309,24 @@ We report our treatment effect estimates using the classification approach descr
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 1.908 & 6.140 & \textcolor{red!80!black}{\textbf{-4.230}} & [-4.537, -3.923] \\
-        Bravery & 4.694 & 1.568 & \textcolor{green!50!black}{\textbf{3.126}} & [2.890, 3.362] \\
-        Mistreatment & 0.296 & 4.249 & \textcolor{red!80!black}{\textbf{-3.953}} & [-4.156, -3.749] \\
-        Flags & 3.375 & 2.392 & \textcolor{green!50!black}{\textbf{0.983}} & [0.785, 1.180] \\
-        Threat & 2.637 & 2.740 & -0.102 & [-0.284, 0.079] \\
-        Economy & 0.212 & 3.914 & \textcolor{red!80!black}{\textbf{-3.702}} & [-3.889, -3.514] \\
-        Violation & 0.077 & 4.286 & \textcolor{red!80!black}{\textbf{-4.209}} & [-4.413, -4.004] \\
+        Commitment & 64.695 & 65.918 & \textcolor{red!80!black}{-1.223} & [-21.573, 19.127] \\
+        Bravery & 63.209 & 68.903 & \textcolor{red!80!black}{-5.694} & [-20.076, 8.688] \\
+        Mistreatment & 67.990 & 65.089 & \textcolor{green!50!black}{2.902} & [-9.678, 15.582] \\
+        Flags & 60.705 & 68.441 & \textcolor{red!80!black}{-7.737} & [-26.754, 11.280] \\
+        Threat & 74.155 & 60.394 & \textcolor{green!50!black}{13.761} & [-4.433, 31.954] \\
+        Economy & 59.555 & 65.373 & \textcolor{red!80!black}{-5.818} & [-22.012, 10.376] \\
+        Violation & 65.028 & 65.210 & \textcolor{red!80!black}{-0.182} & [-12.003, 11.638] \\
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Text probabilities are computed from marginal sentence probabilities.}
     \label{tab:results_clf2}
 \end{table}
 
-These initial results differ somewhat from the original findings in \cite{fong2021causal},. Since the original study fails to reject the null for all effects except that of \textit{commitment}, for which they find a positive effect, it is notable that our method reports that commitment corresponds to a negative effect.
+% These initial results differ somewhat from the original findings in \cite{fong2021causal},. Since the original study fails to reject the null for all effects except that of \textit{commitment}, for which they find a positive effect, it is notable that our method reports that commitment corresponds to a negative effect.
 
-\vl{The effect sizes seem consistent with the original paper, but does it make sense that the $\hat{\mu}$ estimates are so small, given the scale of the response (0-100)?
-\newline \newline
-Also, I'm not too sure about the variance computation. It seems like the way we define the variance estimate will produce almost the same CI (in terms of width) for every treatment. The CIs also seem much narrower than I would expect?}
+% \vl{The effect sizes seem consistent with the original paper, but does it make sense that the $\hat{\mu}$ estimates are so small, given the scale of the response (0-100)?
+% \newline \newline
+% Also, I'm not too sure about the variance computation. It seems like the way we define the variance estimate will produce almost the same CI (in terms of width) for every treatment. The CIs also seem much narrower than I would expect?}
 
 \subsubsection{Language task approach}
 
@@ -296,7 +335,7 @@ Also, I'm not too sure about the variance computation. It seems like the way we 
 \newline
 On the other hand, if we're interested in a ``real-world'' target setting without the constraints of it having to be Congressional speeches or about HK, we could just use a pre-trained LLM.}
 
-We report our treatment effect estimates using the language modeling approach described in Section \ref{sec:language_modeling}. Again, for each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Tables \ref{tab:results_lm1} and \ref{tab:results_lm2}, due to the small size of the target corpus, we use pre-trained BERT to compute the text probabilities under $P^T$. This means that our target distribution may now be viewed as something akin to the distribution of \textit{all} text, given the extremely large training corpus of BERT. In Table \ref{tab:results_lm1}, we compute $P^T$ for a text jointly over all sentences in the text sample, while in Table \ref{tab:results_lm2}, we compute $P^T$ as the product of the marginal probability of each individual sentence in the text sample.
+We report our treatment effect estimates using the language modeling approach described in Section \ref{sec:language_modeling}. Again, for each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_lm1}, due to the small size of the target corpus, we use pre-trained BERT to compute the text probabilities under $P^T$. This means that our target distribution may now be viewed as something akin to the distribution of \textit{all} text, given the extremely large training corpus of BERT. In Table \ref{tab:results_lm2}, we use BERT fine-tuned with a MLM task on a small number of held-out samples (approximately 30) from $P^T$.
 
 \begin{table}[!ht]
     \centering
@@ -304,42 +343,44 @@ We report our treatment effect estimates using the language modeling approach de
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 60.554 & 102.589 & \textcolor{red!80!black}{\textbf{-42.035}} & [] \\
-        Bravery & 44.707 & 81.793 & \textcolor{red!80!black}{\textbf{-37.085}} & [] \\
-        Mistreatment & 31.754 & 92.042 & \textcolor{red!80!black}{\textbf{-60.288}} & [] \\
-        Flags & 20.703 & 89.907 & \textcolor{red!80!black}{\textbf{-69.204}} & [] \\
-        Threat & 71.665 & 66.138 & \textcolor{green!50!black}{\textbf{5.527}} & [] \\
-        Economy & 42.323 & 81.131 & \textcolor{red!80!black}{\textbf{-38.808}} & [] \\
-        Violation & 46.275 & 81.780 & \textcolor{red!80!black}{\textbf{-35.505}} & [] \\
+        Commitment & 69.254 & 66.250 & \textcolor{green!50!black}{3.004} & [-9.578, 15.586] \\
+        Bravery & 68.617 & 68.317 & \textcolor{green!50!black}{0.301} & [-10.940, 11.542] \\
+        Mistreatment & 71.439 & 67.742 & \textcolor{green!50!black}{3.696} & [-7.712, 15.103] \\
+        Flags & 63.838 & 68.898 & \textcolor{red!80!black}{-5.060} & [-19.985, 9.865] \\
+        Threat & 67.750 & 68.870 & \textcolor{red!80!black}{-1.120} & [-12.762, 10.522] \\
+        Economy & 64.351 & 69.499 & \textcolor{red!80!black}{-5.148} & [-22.397, 12.101] \\
+        Violation & 69.236 & 68.102 & \textcolor{green!50!black}{1.134} & [-10.067, 12.336] \\
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained BERT.}
     \label{tab:results_lm1}
 \end{table}
 
+\vl{Estimates using marginal probabilities with language modeling are pretty unstable. Not sure why?}
+
 \begin{table}[!ht]
     \centering
     \begin{tabular}{c|cccc}
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 85.582 & 29.351 & \textcolor{green!50!black}{\textbf{56.231}} & [] \\
-        Bravery & 27.302 & 102.165 & \textcolor{red!80!black}{\textbf{-74.863}} & [] \\
-        Mistreatment & 12.024 & 115.835 & \textcolor{red!80!black}{\textbf{-103.811}} & [] \\
-        Flags & 4.474 & 106.977 & \textcolor{red!80!black}{\textbf{-102.503}} & [] \\
-        Threat & 15.015 & 116.343 & \textcolor{red!80!black}{\textbf{-101.328}} & [] \\
-        Economy & 210.373 & 8.966 & \textcolor{green!50!black}{\textbf{201.405}} & [] \\
-        Violation & 155.286 & 26.540 & \textcolor{green!50!black}{\textbf{128.746}} & [] \\
+        Commitment & 69.368 & 64.882 & \textcolor{green!50!black}{4.487} & [-7.337, 16.311] \\
+        Bravery & 68.013 & 68.229 & \textcolor{red!80!black}{-0.216} & [-10.948, 10.516] \\
+        Mistreatment & 70.750 & 67.711 & \textcolor{green!50!black}{3.039} & [-7.638, 13.716] \\
+        Flags & 63.571 & 68.671 & \textcolor{red!80!black}{-5.100} & [-19.565, 9.365] \\
+        Threat & 66.362 & 69.418 & \textcolor{red!80!black}{-3.055} & [-13.690, 7.579] \\
+        Economy & 67.308 & 68.363 & \textcolor{red!80!black}{-1.054} & [-16.479, 14.370] \\
+        Violation & 68.099 & 68.209 & \textcolor{red!80!black}{-0.110} & [-10.226, 10.007] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained BERT. Text probabilities are computed from marginal sentence probabilities.}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from BERT fine-tuned with an MLM task on a small number of held-out samples from $P^T$.}
     \label{tab:results_lm2}
 \end{table}
 
-\vl{Although the scale of the $\hat{\mu}$s seems to make more sense now, the $\hat{\tau}$s are way larger than (a) the ones we get with the classifier approach and (b) the ones from the original paper. I'm guessing that this is because the $P^T$ estimates aren't very stable (they can be very small)? I was hoping that using the marginal sentence probabilities would help, but it doesn't seem to.
-\newline
-\newline
-I also haven't included the CI estimates because the small $P^T$ estimates have made the variance estimate super small, so we'll need to think about that as well.}
+% \vl{Although the scale of the $\hat{\mu}$s seems to make more sense now, the $\hat{\tau}$s are way larger than (a) the ones we get with the classifier approach and (b) the ones from the original paper. I'm guessing that this is because the $P^T$ estimates aren't very stable (they can be very small)? I was hoping that using the marginal sentence probabilities would help, but it doesn't seem to.
+% \newline
+% \newline
+% I also haven't included the CI estimates because the small $P^T$ estimates have made the variance estimate super small, so we'll need to think about that as well.}
 
 \section{Extra notes}
 
