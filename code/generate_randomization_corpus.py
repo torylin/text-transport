@@ -43,13 +43,14 @@ def get_args():
     parser.add_argument('--data-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/data/hk_rct/')
     parser.add_argument('--k', type=int, default=17)
     parser.add_argument('--method', type=str, default='sample')
+    parser.add_argument('--seed', type=int, default=230313)
     args = parser.parse_args()
 
     return args
 
-random.seed(230313)
-
 args = get_args()
+
+random.seed(args.seed)
 
 stems = ['brave', 'economy', 'evil', 'flag', 'threat', 'treatyobligation', 'treatyviolation']
 other_stems = ['brave', 'economy', 'evil', 'flag', 'threat', 'treatyviolation']

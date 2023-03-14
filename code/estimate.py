@@ -20,41 +20,16 @@ from functools import partial
 from transformers.utils import logging
 from tabulate import tabulate
 
+from utils import get_embeds
+
 logging.set_verbosity_error()
-
-class ListDataset(Dataset):
-    def __init__(self, original_list):
-        self.original_list = original_list
-    
-    def __len__(self):
-        return len(self.original_list)
-
-    def __getitem__(self, i):
-        return self.original_list[i]
-
-def get_embeds(sentences, tokenizer):
-    tokens = tokenizer(sentences, return_tensors='pt', padding=True, truncation=True)
-    ds = Dataset.from_dict(tokens).with_format('torch')
-    dataloader = DataLoader(ds, batch_size=16, shuffle=False)
-    embeds_list = []
-    for batch in tqdm(dataloader):
-        for key in batch.keys():
-            batch[key] = batch[key].to(device)
-        with torch.no_grad():
-            outputs = model(**batch)
-        out = outputs.last_hidden_state.mean(axis=1)
-        embeds_list.append(out.detach().cpu())
-
-    embeds = np.vstack(embeds_list)
-    
-    return embeds
 
 def get_prob_clf(model, clf, sent_group, args):
     sents = tokenize.sent_tokenize(sent_group)
     if args.lm_library == 'sentence-transformers':
         sents_embed = model.encode(sents)
     elif args.lm_library == 'transformers':
-        sents_embed = get_embeds(sents, tokenizer)
+        sents_embed = get_embeds(sents, tokenizer, model, device)
     try:
         probs = clf.predict_proba(sents_embed)
     except:
@@ -149,7 +124,6 @@ def get_args():
     parser.add_argument('--clf', type=str, default='logistic')
     parser.add_argument('--estimate', type=str, default='diff')
     parser.add_argument('--lm-name', type=str, default='bert-base-uncased')
-    parser.add_argument('--sentence-lm-name', type=str, default='all-mpnet-base-v2')
     parser.add_argument('--lm-library', type=str, default='transformers')
     parser.add_argument('--marginal-probs', action='store_true')
     parser.add_argument('--ci', action='store_true')
@@ -278,7 +252,7 @@ elif args.method == 'clf':
         if 'Masked' not in model.config.architectures[0]:
             tokenizer.pad_token = tokenizer.eos_token
         
-        embeds = get_embeds(sentences.astype(str).tolist(), tokenizer)
+        embeds = get_embeds(sentences.astype(str).tolist(), tokenizer, model, device)
 
     X_train, X_test, y_train, y_test, sentence_train, sentence_test = train_test_split(embeds, labels, sentences, test_size=0.9, random_state=args.seed)
 
@@ -320,7 +294,7 @@ elif args.method == 'clf':
         if args.lm_library == 'sentence-transformers':
             test_embeds = model.encode(df_random_test['text_full'].values, show_progress_bar=True)
         elif args.lm_library == 'transformers':
-            test_embeds = get_embeds(df_random_test['text_full'].values.astype(str).tolist(), tokenizer)
+            test_embeds = get_embeds(df_random_test['text_full'].values.astype(str).tolist(), tokenizer, model, device)
 
         if args.scale:
             probs = clf.predict_proba(scaler.transform(test_embeds))
