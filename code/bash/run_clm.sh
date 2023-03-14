@@ -8,6 +8,8 @@ conditions=(conditional_prob)
 # methods=(clf lm)
 methods=(clm)
 params=()
+lm_name=transfo-xl-wt103
+batch_size=8
 
 for method in ${methods[@]}
 do
@@ -20,7 +22,7 @@ do
         for treatment in ${treatments[@]}
         do
             printf "Method: $method \t Prob: $condition \t Treatment: $treatment\n"
-            python estimate.py --method $method --treatment $treatment "${params[@]}" --ci --lm-name /home/victorialin/Documents/2022-2023/causal_text/models/gpt2/best_model/
+            python estimate.py --method $method --treatment $treatment "${params[@]}" --ci --lm-name $lm_name --batch-size $batch_size
         done
         params=()
     done

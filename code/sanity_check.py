@@ -3,7 +3,7 @@ import torch
 import argparse
 import pandas as pd
 import numpy as np
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModel, ReformerTokenizer, ReformerModelWithLMHead, ReformerConfig
 from sentence_transformers import SentenceTransformer
 from sklearn.manifold import TSNE
 import seaborn as sns

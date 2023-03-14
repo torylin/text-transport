@@ -125,6 +125,7 @@ def get_args():
     parser.add_argument('--estimate', type=str, default='diff')
     parser.add_argument('--lm-name', type=str, default='bert-base-uncased')
     parser.add_argument('--lm-library', type=str, default='transformers')
+    parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--marginal-probs', action='store_true')
     parser.add_argument('--ci', action='store_true')
     parser.add_argument('--scale', action='store_true')
@@ -171,13 +172,13 @@ if args.method == 'mlm' or args.method == 'clm':
         tokens3 = tokenizer(df_random.text3.fillna('').astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
 
         ds1 = Dataset.from_dict(tokens1).with_format('torch')
-        dataloader1 = DataLoader(ds1, batch_size=16, shuffle=False)
+        dataloader1 = DataLoader(ds1, batch_size=args.batch_size, shuffle=False)
 
         ds2 = Dataset.from_dict(tokens2).with_format('torch')
-        dataloader2 = DataLoader(ds2, batch_size=16, shuffle=False)
+        dataloader2 = DataLoader(ds2, batch_size=args.batch_size, shuffle=False)
 
         ds3 = Dataset.from_dict(tokens3).with_format('torch')
-        dataloader3 = DataLoader(ds3, batch_size=16, shuffle=False)
+        dataloader3 = DataLoader(ds3, batch_size=args.batch_size, shuffle=False)
 
         all_probs1 = get_prob_lm(dataloader1)
         all_probs2 = get_prob_lm(dataloader2)
@@ -188,7 +189,7 @@ if args.method == 'mlm' or args.method == 'clm':
     else:
         tokens = tokenizer(df_random['text_full'].astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
         ds = Dataset.from_dict(tokens).with_format('torch')
-        dataloader = DataLoader(ds, batch_size=16, shuffle=False)
+        dataloader = DataLoader(ds, batch_size=args.batch_size, shuffle=False)
 
         all_probs = get_prob_lm(dataloader)
     
