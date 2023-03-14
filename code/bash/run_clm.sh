@@ -8,7 +8,7 @@ conditions=(conditional_prob)
 # methods=(clf lm)
 methods=(clm)
 params=()
-lm_name=transfo-xl-wt103
+lm_name=google/reformer-crime-and-punishment
 batch_size=8
 
 for method in ${methods[@]}
