@@ -30,7 +30,7 @@ def get_sent_groups(text, num_sentences, sent_probs, seed):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/data/')
-    parser.add_argument('--seed', type=int', default=230224)
+    parser.add_argument('--seed', type=int, default=230224)
     args = parser.parse_args()
 
     return args
@@ -46,7 +46,7 @@ for filename in os.listdir(os.path.join(args.data_dir, 'hk_speeches', 'text')):
     with open(os.path.join(args.data_dir, 'hk_speeches', 'text', filename)) as file:
         text = file.read().replace('\n', '')
 
-    sent_groups += get_sent_groups(text, range(2, 8), sample_sent_probs, args.seed)
+    sent_groups += get_sent_groups(text, range(2, 8), full_sent_probs[:6], args.seed)
 
 df = pd.DataFrame({'text_full': sent_groups})
-df.to_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_corpus.csv'), index=False)
+df.to_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_corpus_fullprobs.csv'), index=False)

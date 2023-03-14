@@ -5,7 +5,7 @@ import torch
 import argparse
 import pandas as pd
 from datasets import Dataset
-from transformers import AutoTokenizer, DataCollatorForLanguageModeling, TrainingArguments, Trainer, AutoModelForMaskedLM
+from transformers import AutoTokenizer, DataCollatorForLanguageModeling, TrainingArguments, Trainer, AutoModelForMaskedLM, AutoModelForCausalLM
 from sklearn.model_selection import train_test_split
 
 def preprocess(df, tokenizer):
@@ -14,6 +14,7 @@ def preprocess(df, tokenizer):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/data/')
+    parser.add_argument('--lm-type', type=str, default='mlm')
     parser.add_argument('--model', type=str, default='bert-base-uncased')
     parser.add_argument('--seed', type=int, default=230301)
     parser.add_argument('--mlm-prob', type=float, default=0.15)
@@ -38,12 +39,19 @@ args = get_args()
 
 df_target = pd.read_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_train.csv'))
 
-model = AutoModelForMaskedLM.from_pretrained(args.model)
+if args.lm_type == 'mlm':
+    model = AutoModelForMaskedLM.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, max_length=512, padding=True, truncation=True)
+    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=args.mlm_prob)
+elif args.lm_type == 'clm':
+    model = AutoModelForCausalLM.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer.padding_side = 'left'
+    tokenizer.pad_token = tokenizer.eos_token
+    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+    
 model.to(device)
-tokenizer = AutoTokenizer.from_pretrained(args.model, max_length=512, padding=True, truncation=True)
-# tokenizer.pad_token = tokenizer.eos_token
-tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=args.mlm_prob)
 
 df_target_train, df_target_val = train_test_split(df_target, test_size=0.33)
 
