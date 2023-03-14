@@ -25,3 +25,6 @@
 *.xdv
 *.bcf
 *.xml
+data/hk_rct/*.pkl
+models/*
+old_models/*

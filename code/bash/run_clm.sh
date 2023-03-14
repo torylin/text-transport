@@ -3,9 +3,10 @@
 cd /home/victorialin/Documents/2022-2023/causal_text/code/
 
 treatments=(treatycommit brave evil flag threat economy treatyviolation)
-conditions=(conditional_prob marginal_prob)
+# conditions=(conditional_prob marginal_prob)
+conditions=(conditional_prob)
 # methods=(clf lm)
-methods=(lm)
+methods=(clm)
 params=()
 
 for method in ${methods[@]}
@@ -19,7 +20,7 @@ do
         for treatment in ${treatments[@]}
         do
             printf "Method: $method \t Prob: $condition \t Treatment: $treatment\n"
-            python estimate.py --method $method --treatment $treatment "${params[@]}" --ci --lm-name /home/victorialin/Documents/2022-2023/causal_text/models/bert-base-uncased/best_model/
+            python estimate.py --method $method --treatment $treatment "${params[@]}" --ci --lm-name /home/victorialin/Documents/2022-2023/causal_text/models/gpt2/best_model/
         done
         params=()
     done

@@ -7,20 +7,58 @@ import numpy as np
 import torch
 import itertools
 from sentence_transformers import SentenceTransformer
-from transformers import AutoTokenizer, AutoModelForMaskedLM
+from transformers import AutoTokenizer, AutoModelForMaskedLM, AutoModelForCausalLM, AutoModel, pipeline
 from datasets import Dataset
 from torch.utils.data import DataLoader
 from sklearn.linear_model import LogisticRegressionCV, LinearRegression
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from nltk import tokenize
 from tqdm import tqdm
 from functools import partial
+from transformers.utils import logging
+from tabulate import tabulate
 
-def get_prob_clf(model, clf, sent_group):
+logging.set_verbosity_error()
+
+class ListDataset(Dataset):
+    def __init__(self, original_list):
+        self.original_list = original_list
+    
+    def __len__(self):
+        return len(self.original_list)
+
+    def __getitem__(self, i):
+        return self.original_list[i]
+
+def get_embeds(sentences, tokenizer):
+    tokens = tokenizer(sentences, return_tensors='pt', padding=True, truncation=True)
+    ds = Dataset.from_dict(tokens).with_format('torch')
+    dataloader = DataLoader(ds, batch_size=16, shuffle=False)
+    embeds_list = []
+    for batch in tqdm(dataloader):
+        for key in batch.keys():
+            batch[key] = batch[key].to(device)
+        with torch.no_grad():
+            outputs = model(**batch)
+        out = outputs.last_hidden_state.mean(axis=1)
+        embeds_list.append(out.detach().cpu())
+
+    embeds = np.vstack(embeds_list)
+    
+    return embeds
+
+def get_prob_clf(model, clf, sent_group, args):
     sents = tokenize.sent_tokenize(sent_group)
-    sents_embed = model.encode(sents)
-    probs = clf.predict_proba(sents_embed)
+    if args.lm_library == 'sentence-transformers':
+        sents_embed = model.encode(sents)
+    elif args.lm_library == 'transformers':
+        sents_embed = get_embeds(sents, tokenizer)
+    try:
+        probs = clf.predict_proba(sents_embed)
+    except:
+        pdb.set_trace()
     p0 = np.prod(probs[:,0])
     p1 = np.prod(probs[:,1])
     # if p0 > p1:
@@ -29,7 +67,7 @@ def get_prob_clf(model, clf, sent_group):
     #     return np.array([1-p1, p1])
     return np.array([p0, p1])
 
-def get_prob_lm(dataloader):
+def get_prob_mlm(dataloader):
     all_probs = []
     for batch in tqdm(dataloader):
         for key in batch.keys():
@@ -48,6 +86,18 @@ def get_prob_lm(dataloader):
 
     return all_probs
 
+def get_prob_clm(dataloader):
+    all_probs = []
+    for batch in tqdm(dataloader):
+        for key in batch.keys():
+            batch[key] = batch[key].to(device)
+        outputs = model.generate(**batch, max_new_tokens=0, return_dict_in_generate=True, output_scores=True)
+        probabilities = torch.exp(model.compute_transition_scores(outputs.sequences, outputs.scores, normalize_logits=True))
+        all_probs += probabilities.flatten().tolist()
+    
+    all_probs = np.array(all_probs)
+    
+    return all_probs
 
 def get_var_clf(idx, df, weights, y_mean):
     i = idx[0]
@@ -100,8 +150,10 @@ def get_args():
     parser.add_argument('--estimate', type=str, default='diff')
     parser.add_argument('--lm-name', type=str, default='bert-base-uncased')
     parser.add_argument('--sentence-lm-name', type=str, default='all-mpnet-base-v2')
+    parser.add_argument('--lm-library', type=str, default='transformers')
     parser.add_argument('--marginal-probs', action='store_true')
     parser.add_argument('--ci', action='store_true')
+    parser.add_argument('--scale', action='store_true')
     args = parser.parse_args()
 
     return args
@@ -114,19 +166,29 @@ print(device)
 
 args = get_args()
 
-df_random = pd.read_csv(os.path.join(args.data_dir, 'hk_rct', 'HKData.csv'))
-df_target = pd.read_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_corpus.csv'))
+# df_random = pd.read_csv(os.path.join(args.data_dir, 'hk_rct', 'HKData.csv'))
+df_random = pd.read_csv(os.path.join(args.data_dir, 'hk_rct', 'HKRepData.csv'))
+df_target = pd.read_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_corpus_fullprobs.csv'))
 df_random['text_full'] = df_random.text1.fillna('') + ' ' + df_random.text2.fillna('') + ' ' + df_random.text3.fillna('')
 
-df_random_corp = pd.read_pickle(os.path.join(args.data_dir, 'hk_rct', 'randomization_corpus.pkl'))
+df_random_corp = pd.read_pickle(os.path.join(args.data_dir, 'hk_rct', 'randomization_corpus_random_sample.pkl'))
 if args.treatment == 'treatycommit':
     treat_prob = df_random_corp['treatyobligation'].mean()
 else:
     treat_prob = df_random_corp[args.treatment].mean()
 
-if args.method == 'lm':
-    tokenizer = AutoTokenizer.from_pretrained(args.lm_name, max_length=512, truncation=True, padding=True)
-    model = AutoModelForMaskedLM.from_pretrained(args.lm_name)
+if args.method == 'mlm' or args.method == 'clm':
+    if args.method == 'mlm':
+        get_prob_lm = get_prob_mlm
+        tokenizer = AutoTokenizer.from_pretrained(args.lm_name, max_length=512, truncation=True, padding=True)
+        model = AutoModelForMaskedLM.from_pretrained(args.lm_name)
+    elif args.method == 'clm':
+        get_prob_lm = get_prob_clm
+        tokenizer = AutoTokenizer.from_pretrained(args.lm_name)
+        tokenizer.padding_side = 'left'
+        tokenizer.pad_token = tokenizer.eos_token
+        model = AutoModelForCausalLM.from_pretrained(args.lm_name)
+
     model.to(device)
 
     if args.marginal_probs:
@@ -200,22 +262,36 @@ if args.method == 'lm':
 
 elif args.method == 'clf':
 
-    model = SentenceTransformer(args.sentence_lm_name)
-    model.to(device)
-
     sentences = np.hstack([df_random['text_full'].values, df_target['text_full'].values])
     labels = np.array([0]*df_random.shape[0] + [1]*df_target.shape[0])
     sentences, labels = shuffle(sentences, labels, random_state=args.seed)
 
-    embeds = model.encode(sentences, show_progress_bar=True)
+    if args.lm_library == 'sentence-transformers':
+        model = SentenceTransformer(args.lm_name)
+        model.to(device)
+        embeds = model.encode(sentences, show_progress_bar=True)
+
+    elif args.lm_library == 'transformers':
+        tokenizer = AutoTokenizer.from_pretrained(args.lm_name, max_length=512, truncation=True)
+        model = AutoModel.from_pretrained(args.lm_name)
+        model.to(device)
+        if 'Masked' not in model.config.architectures[0]:
+            tokenizer.pad_token = tokenizer.eos_token
+        
+        embeds = get_embeds(sentences.astype(str).tolist(), tokenizer)
 
     X_train, X_test, y_train, y_test, sentence_train, sentence_test = train_test_split(embeds, labels, sentences, test_size=0.9, random_state=args.seed)
 
     if args.clf == 'logistic':
-        clf = LogisticRegressionCV(cv=5, random_state=args.seed)
+        clf = LogisticRegressionCV(cv=5, random_state=args.seed, max_iter=1000)
     elif args.clf == 'elasticnet':
         clf = LogisticRegressionCV(cv=5, random_state=args.seed, penalty='elasticnet', solver='saga', l1_ratios=[0.5]*5, max_iter=1000)
-    clf.fit(X_train, y_train)
+    if args.scale:
+        scaler = StandardScaler()
+        scaler.fit(X_train)
+        clf.fit(scaler.transform(X_train), y_train)
+    else:
+        clf.fit(X_train, y_train)
 
     train_df = pd.DataFrame({'text_full': sentence_train})
     test_df = pd.DataFrame({'text_full': sentence_test})
@@ -235,14 +311,21 @@ elif args.method == 'clf':
     if args.marginal_probs:
         prob_list = []
         for sent_group in tqdm(df_random_test['text_full'].values):
-            prob_list.append(get_prob_clf(model, clf, sent_group))
+            prob_list.append(get_prob_clf(model, clf, sent_group, args))
         probs = np.vstack(prob_list)
         # marginal_probs = np.vstack(prob_list)
         # probs = np.hstack([probs[:,0].reshape(-1, 1), marginal_probs[:,1].reshape(-1, 1)])
 
     else:
-        test_embeds = model.encode(df_random_test['text_full'].values, show_progress_bar=True)
-        probs = clf.predict_proba(test_embeds)
+        if args.lm_library == 'sentence-transformers':
+            test_embeds = model.encode(df_random_test['text_full'].values, show_progress_bar=True)
+        elif args.lm_library == 'transformers':
+            test_embeds = get_embeds(df_random_test['text_full'].values.astype(str).tolist(), tokenizer)
+
+        if args.scale:
+            probs = clf.predict_proba(scaler.transform(test_embeds))
+        else:
+            probs = clf.predict_proba(test_embeds)
 
     corp_prob = np.array([df_random_test.shape[0]/(df_random_test.shape[0]+df_target_test.shape[0]), 
                         df_target_test.shape[0]/(df_random_test.shape[0]+df_target_test.shape[0])])
@@ -292,8 +375,12 @@ elif args.method == 'clf':
 
         varhat = varhat1 + varhat0
 
+rows = [['{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]]
 print('mu1: {}'.format(mu1))
 print('mu0: {}'.format(mu0))
 print('Estimate: {}'.format(est))
 if args.ci:
+    rows[0] += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
     print('95% CI: [{}, {}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat)))
+
+print(tabulate(rows, headers=['mu1', 'mu0', 'est', 'ci'], tablefmt='latex'))
