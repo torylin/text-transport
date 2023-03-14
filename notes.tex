@@ -66,7 +66,8 @@ Suppose we have some data collected from a randomized trial, in which subjects $
     \item Likewise, for various attributes comprising $h(X)=(h_1(X), h_2(X), h_3(X), \dots)$, there may be several candidate texts that correspond to $h_1(X)=1$, several candidate texts that correspond to $h_2(X)=0$, and so on.
 \end{itemize}
 
-While we are guaranteed to be able to obtain an unbiased effect estimate for $g(X)$ from this trial (e.g., using the plug-in estimator), the estimate corresponds only to the effect of $g(X)$ \textit{in this specific text setting}. The type of text setting constructed in this trial is fairly artificial, and we believe that the effect may be different depending on the text setting. It is important, for example, to know if this effect still holds in natural text settings.
+While we are guaranteed to be able to obtain an unbiased effect estimate for $g(X)$ from this trial (e.g., using the plug-in estimator), the estimate corresponds only to the effect of $g(X)$ \textit{in this specific text setting}.\footnote{``Vignette experiments only provide a local treatment effect. Extrapolating from this local treatment effect to the population of relevant texts requires the strong assumption that the many possible ways of delivering
+the latent treatment do not interact with the latent treatment, causing its effect on the outcome to change.'' \cite{fong2021causal}} The type of text setting constructed in this trial is fairly artificial, and we believe that the effect may be different depending on the text setting. It is important, for example, to know if this effect still holds in natural text settings.
 
 Therefore, we are interested in knowing the effect of $g(X)$ under text distributions that are different from the initial text distribution. Again, some notation:
 
@@ -273,6 +274,25 @@ Our randomization corpus $P^R$ is taken from \cite{fong2021causal}, where texts 
     \item \textit{Violation}: Whether the following is mentioned: that China's actions violate the Sino-British Joint Declaration, which guarantees the autonomy of the economy and government of Hong Kong.
 \end{itemize}
 
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+        \toprule
+        Treatment & $\hat{\tau}$ & 95\% CI \\
+        \midrule
+        Commitment & \textbf{\textcolor{green!50!black}{2.68$^*$}} & [0.27, 5.09] \\
+        Bravery & \textcolor{green!50!black}{4.529} & [-0.85, 4.55] \\
+        Mistreatment & \textcolor{green!50!black}{0.14} & [-2.58, 2.86] \\
+        Flags & \textcolor{red!80!black}{-2.12} & [-4.84, 0.60] \\
+        Threat & \textcolor{red!80!black}{-2.07} & [-4.74, 0.60]  \\
+        Economy & \textcolor{red!80!black}{-0.94} & [-3.59, 1.71] \\
+        Violation & \textcolor{green!50!black}{0.75} & [-1.95, 3.45] \\
+        \bottomrule
+    \end{tabular}
+    \caption{For comparison, treatment effect estimates from the original Fong \& Grimmer study \cite{fong2021causal} (assuming normal confidence intervals).}
+    \label{tab:results_baseline}
+\end{table}
+
 \subsubsection{Target corpus}
 
 Our target corpus $P^T$ is derived from the U.S. Congressional speeches on the Hong Kong protests, which \cite{fong2021causal} used as the basis for their constructed texts. This corpus comprises 20 speeches delivered during Congressional meetings between June and November 2019. We split each speech into passages of 2-7 sentences, following the sentence probabilities of the randomization corpus. We consider these passages to be the natural language analogs of the constructed texts in \cite{fong2021causal}.
@@ -289,8 +309,8 @@ We report our treatment effect estimates using the classification approach descr
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 72.087 & 68.743 & \textbf{\textcolor{green!50!black}{3.343}} & [0.294, 6.393] \\
-        Bravery & 74.134 & 69.604 & \textbf{\textcolor{green!50!black}{4.529}} & [1.021, 8.038] \\
+        Commitment & 72.087 & 68.743 & \textbf{\textcolor{green!50!black}{3.343$^*$}} & [0.294, 6.393] \\
+        Bravery & 74.134 & 69.604 & \textbf{\textcolor{green!50!black}{4.529$^*$}} & [1.021, 8.038] \\
         Mistreatment & 69.844 & 70.972 & \textcolor{red!80!black}{-1.127} & [-4.391, 2.136] \\
         Flags & 67.943 & 71.138 & \textcolor{red!80!black}{-3.195} & [-6.811, 0.422] \\
         Threat & 69.034 & 71.32 & \textcolor{red!80!black}{-2.285} & [-5.586, 1.015]  \\
@@ -327,7 +347,7 @@ We report our treatment effect estimates using the classification approach descr
 % \newline \newline
 % Also, I'm not too sure about the variance computation. It seems like the way we define the variance estimate will produce almost the same CI (in terms of width) for every treatment. The CIs also seem much narrower than I would expect?}
 
-\subsubsection{Language task approach}
+\subsubsection{Language modeling approach}
 
 \vl{Probably the biggest issue we have is the lack of data---it turns out that the natural text of the HK speeches is not a very large corpus. While the classifier doesn't require much training data because the task is fairly easy, it's unclear if properly fine-tuning an LLM requires more.
 \newline
@@ -342,8 +362,8 @@ We report our treatment effect estimates using the language modeling approach de
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 71.92 & 68.363 & \textbf{\textcolor{green!50!black}{3.557}} & [1.071, 6.043] \\
-        Bravery & 72.785 & 69.571 & \textbf{\textcolor{green!50!black}{3.214}} & [0.380, 6.048]  \\
+        Commitment & 71.92 & 68.363 & \textbf{\textcolor{green!50!black}{3.557$^*$}} & [1.071, 6.043] \\
+        Bravery & 72.785 & 69.571 & \textbf{\textcolor{green!50!black}{3.214$^*$}} & [0.380, 6.048]  \\
         Mistreatment & 69.633 & 70.303 & \textcolor{red!80!black}{-0.670} & [-3.550, 2.210] \\
         Flags & 69.022 & 70.422 & \textcolor{red!80!black}{-1.400} & [-4.401, 1.600] \\
         Threat & 68.908 & 70.505 & \textcolor{red!80!black}{-1.597} & [-4.527, 1.332] \\
@@ -362,8 +382,8 @@ We report our treatment effect estimates using the language modeling approach de
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 72.046 & 68.347 & \textbf{\textcolor{green!50!black}{3.699}} & [1.192, 6.205] \\
-        Bravery & 73.1 & 69.598 & \textbf{\textcolor{green!50!black}{3.503}} & [0.644, 6.361] \\
+        Commitment & 72.046 & 68.347 & \textbf{\textcolor{green!50!black}{3.699$^*$}} & [1.192, 6.205] \\
+        Bravery & 73.1 & 69.598 & \textbf{\textcolor{green!50!black}{3.503$^*$}} & [0.644, 6.361] \\
         Mistreatment & 69.788 & 70.341 & \textcolor{red!80!black}{-0.553} & [-3.447, 2.341] \\
         Flags & 69.122 & 70.463 & \textcolor{red!80!black}{-1.341} & [-4.373, 1.691] \\
         Threat & 68.92 & 70.565 & \textcolor{red!80!black}{-1.645} & [-4.616, 1.326] \\
@@ -394,6 +414,26 @@ We report our treatment effect estimates using the language modeling approach de
     \label{tab:results_lm3}
 \end{table}
 
+\subsection{Discussion}
+
+\vl{Marginal probabilities seem to produce less stable results, so we will disregard those for now.}
+
+We obtain similar results across both the classification and language modeling approaches.  As in the original study, we find \textit{commitment} to have a significant positive effect on the response and other text attributes to have no significant effect (although the direction of the effect is generally consistent with the original study). Unlike the original study, we find \textit{bravery} to additionally have a significant positive effect on the response across both approaches.
+
+\subsection{Aliasing check}
+
+For a randomized study to isolate the effect of one text attribute, the texts must be parameterized such that there is no \textit{aliasing} across the attributes. That is, the following assumption must hold: either all the attributes must be independent, or the unmeasured attributes must be unrelated to the outcome. If the treatment of interest is aliased, it may vary simultaneously with other text attributes, both measured and unmeasured.
+
+Fong \& Grimmer claim that (1) the construction of their texts prevents aliasing of measured attributes, but they acknowledge that (2) aliasing of the treatment with unmeasured text attributes, such as the phrasing of sentences or other attributes specific to the randomization text distribution, is still possible. Our work is meant in part to address (2). However, we should check that (1) holds as well. 
+
+One particular concern is that while (1) may hold for the natural language representation of the text, it may not hold for the language representations that we are use experimentally (e.g., MPNet or GPT-2 embeddings). We can check the validity of the claim using t-SNE plots of the candidate sentence embeddings for each text attribute. If the sentence embeddings clearly cluster by text attribute, we can be more confident that the attributes are independent. However, this is not a perfect measure, since for each individual attribute, the wording of the candidate sentences is similar, making it fundamentally more likely for sentences to cluster by attribute.
+
+\begin{figure}
+    \centering
+    \includegraphics{}
+    \caption{Caption}
+    \label{fig:my_label}
+\end{figure}
 \newpage
 \appendix
 
