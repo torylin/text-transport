@@ -14,6 +14,7 @@
 \allowdisplaybreaks
 
 \title{Causal Effect Estimation with Text}
+\author{}
 \date{}
 
 \begin{document}
@@ -109,16 +110,16 @@ Finally, letting $\mathcal{X}$ be the space of all texts, the variance of the es
     &= \text{Cov}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{1}{n} \sum_{j=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}, \sum_{x' \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}\right] \\
-    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x), \int_{x'}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}d\mathbb{P}^R(x')\right] \\
-    &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n \int_x \int_{x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_i)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j) \text{Cov})_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
-    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_i)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j) \text{Cov}_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
-    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_i)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j) (P^R(X_i,X_j) - P^R(X_i)P^R(X_j))d\mathbb{P}^R(x)d\mathbb{P}^R(x')
+    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x), \int_{x'}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_j(x')\mathbbm{1}\{X_j=x'\}d\mathbb{P}^R(x')\right] \\
+    &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n \int_x \int_{x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') \text{Cov})_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') \text{Cov}_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') (P^R(x,x') - P^R(x)P^R(x'))d\mathbb{P}^R(x)d\mathbb{P}^R(x')
 \end{align*}
 \eli{I think this generally gets to the right place, but e.g. the inner term in some of those covariances should be $\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x)$, so that only $\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x)$ is random}
 where the last equality follows from
 \begin{align*}
     \text{Cov}[\mathbbm{1}\{X_i=x\},\mathbbm{1}\{X_j=x'\}] &=\mathbb{E}_X[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}] - \mathbb{E}_X[\mathbbm{1}\{X_i=x\}]\mathbb{E}_X[\mathbbm{1}\{X_j=x'\}] \\
-    &= P^R(X_i,X_j) - P^R(X_i)P^R(X_j)
+    &= P^R(x,x') - P^R(x)P^R(x')
 \end{align*}
 
 With the central limit theorem (CLT), we establish asymptotic normality:
@@ -131,19 +132,15 @@ which we can use to estimate confidence intervals using the following unbiased e
     \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i,j \in [n]} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j)\frac{P^R(X_i,X_j) - P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
 \end{equation*}
 
-\vl{The last fraction of the variance is 0 unless $i=j$, in which case it becomes $$\frac{P^R(X_i,X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_i)} = \frac{P^R(X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i)} = 1-P^R(X_j)$$
-which is nonzero.}
+\vl{The last term of the variance is 0 unless $i=j$, in which case it becomes $$\frac{P^R(X_i,X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_i)} = \frac{P^R(X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i)} = 1-P^R(X_j)$$}
 
-\vl{Do we compute variance estimates separately for $\hat{\mu}(P_1)$ and $\hat{\mu}(P_1)$, then compute $$\widehat{\text{Var}}(\hat{\tau})=\frac{\widehat{\text{Var}}[\hat{\mu}(P_1)]}{n^2P(g(X)=1)^2} + \frac{\widehat{\text{Var}}[\hat{\mu}(P_0)]}{n^2P(g(X)=0)^2}$$ Or do we use this variance estimate over the whole sample to directly get $\widehat{\text{Var}}(\hat{\tau})$?}
+\vl{QUESTION: Do we compute variance estimates separately for $\hat{\mu}(P_1)$ and $\hat{\mu}(P_1)$, then compute $$\widehat{\text{Var}}(\hat{\tau})=\frac{\widehat{\text{Var}}[\hat{\mu}(P_1)]}{n^2P(g(X)=1)^2} + \frac{\widehat{\text{Var}}[\hat{\mu}(P_0)]}{n^2P(g(X)=0)^2}$$ Or do we use this variance estimate over the whole sample to directly get $\widehat{\text{Var}}(\hat{\tau})$?
+ANSWER: In the finite-sample setting, adding the variance estimates is fine. In the non-finite-sample setting, the variance estimation is more involved.}
 
 \section{Empirical estimation}
 \subsection{Estimating $\hat{P}^T$ from the data}
 
 \vl{QUESTION: Should we ever use the full randomization corpus (i.e., all possible 2- or 3-attribute permutations of candidate sentences from the HK study) as $P^R$, or do we always consider $P^R$ to be the sample (i.e., the data for which we have measured outcomes)? This is relevant because the distributions are not the same---the reason being that there are different numbers of candidate sentences for each text attribute, so a full set of permutations is not uniform over the confounding attributes. 
-
-\newline
-\newline
-
 ANSWER: Instead of getting all possible permutations, get the full randomization distribution by just sampling a large number of texts according to the way Fong \& Grimmer sampled theirs. That is, first sample attributes, then sample sentences from those attributes.}
 
 \vl{As a related question, should the distribution of number of sentences per text in $P^T$ follow sample $P^R$ or full-corpus $P^R$?}
@@ -151,8 +148,6 @@ ANSWER: Instead of getting all possible permutations, get the full randomization
 Our estimator has one primary nuisance parameter, $\frac{\hat{d\mathbb{P}^T}(X)}{d\mathbb{P}^R(X)}$ (or $\hat{P}^T(X)$, depending on the version of the estimator we want to use). We propose several approaches for estimating this quantity.
 
 \vl{QUESTION: Is sample splitting necessary when learning the nuisance parameter? For now, I have split off a very small sample (10\% of the data) for training the classifier.
-\newline
-\newline
 ANSWER: Maybe?}
 
 \subsubsection{Classification}
@@ -178,20 +173,26 @@ We have several options for our binary classifier:
 \subsubsection{Language modeling}
 \label{sec:language_modeling}
 
-Language models like transformers are capable of directly computing the probability of a sentence (see Section \ref{sec:huggingface_sentence_probs}), even if the model has never seen the sentence before. This probability is based on the text distribution used to train the model. Since the state-of-the-art language models are pre-trained on extremely large corpora that approximate the entirety of the English language, we must further fine-tune before we can use them to compute sentence probabilities for $P^T$.
+Language models like transformers are capable of directly computing the probability of a sentence (see Section \ref{sec:huggingface_sentence_probs}), even if the model has never seen the sentence before. This probability is based on the text distribution used to train the model. Since the state-of-the-art large language models (LLMs) are pre-trained on extremely large corpora that approximate the entirety of the English language, we must further fine-tune before we can use them to compute sentence probabilities for $P^T$.
 
-Several tasks that may be useful for encouraging a language model $M_\theta$ to learn $P^T$:
-\begin{itemize}
-    \item We draw text examples from $P^T$. For each sentence, certain words are masked, and $M_\theta$ learns to predict them.
-    \item Causal language modeling (CLM)/text generation: Again, we drawn text samples from $P^T$. For each sentence, starting from the first word, $M_\theta$ learns to predict the next word.
-    \item Style transfer: Given a text example drawn from $P^R$, $M_\theta$ reproduces that same text example ``in the style of'' $P^T$. This task requires $M_\theta$ to be a sequence-to-sequence language model, like BART \cite{lewis2020bart}, and for best results, parallel text examples from $P^R$ and $P^T$ should be available.
-\end{itemize}
+LLMs are often trained using masked language modeling (MLM), where for each training sentence, certain words are randomly masked, and the model must predict them. However, it is important to note that token and sentence probabilities from language models trained with MLM are not statistically or linguistically meaningful. (This was actually \href{https://github.com/google-research/bert/issues/35}{confirmed} by Jacob Devlin when BERT was released.) The token probabilities returned by the model are the probability of the masked token \textit{at a specific position}, \textit{given the rest of the unmasked tokens in the sentence}, rather than the probability of the token \textit{given the preceding tokens in the sentence}. 
 
-For a practical example of MLM and CLM, see \href{https://huggingface.co/docs/transformers/tasks/language_modeling}{this example from HuggingFace}. For some ideas on how to fine-tune BART on a style transfer task, see \href{https://blog.fastforwardlabs.com/2022/05/05/neutralizing-subjectivity-bias-with-huggingface-transformers.html}{this blog post} and \cite{lai2021bart}.
+Instead, to estimate meaningful sentence probabilities directly, \textit{autoregressive language models}, which are trained on causal language modeling\footnote{There's nothing causal about causal language modeling; it's just a naming convention.} (CLM)/text generation/next-word-prediction tasks, may be used. These include ``shallow'' language models like n-gram language models, as well as autoregressive LLMs like GPT-2, TransformerXL, and XLNet (a full list of autoregressive LLMs implemented by HuggingFace can be found \href{https://huggingface.co/docs/transformers/model_summary#autoregressive-models}{here}).
+
+We can encourage an autoregressive language model $M_\theta$ to learn $P^T$ by fine-tuning it on text examples from $P^T$ using a CLM task. For a practical example of CLM, see \href{https://huggingface.co/docs/transformers/tasks/language_modeling}{this example from HuggingFace}.
+
+% \begin{itemize}
+%     \item We draw text examples from $P^T$. For each sentence, certain words are masked, and $M_\theta$ learns to predict them.
+%     \item Causal language modeling (CLM)/text generation: Again, we drawn text samples from $P^T$. For each sentence, starting from the first word, $M_\theta$ learns to predict the next word.
+%     \item Style transfer: Given a text example drawn from $P^R$, $M_\theta$ reproduces that same text example ``in the style of'' $P^T$. This task requires $M_\theta$ to be a sequence-to-sequence language model, like BART \cite{lewis2020bart}, and for best results, parallel text examples from $P^R$ and $P^T$ should be available.
+% \end{itemize}
+
+% For a practical example of MLM and CLM, see \href{https://huggingface.co/docs/transformers/tasks/language_modeling}{this example from HuggingFace}. For some ideas on how to fine-tune BART on a style transfer task, see \href{https://blog.fastforwardlabs.com/2022/05/05/neutralizing-subjectivity-bias-with-huggingface-transformers.html}{this blog post} and \cite{lai2021bart}.
 
 \vl{Because texts from $P^R$ are very artificial (especially the sequences of sentences), it is possible that $P^T$ of those texts will be very low, perhaps more than they should be. $P^T$ of individual sentences may not be that low, but the overall construction will have low probability. Is this a problem? Maybe we should compute $P^T(\text{sentence 1})P^T(\text{sentence 2})P^T(\text{sentence 3})$ instead of $P^T(\text{sentence 1, sentence 2, sentence 3})$...}
 
-\vl{If you fine-tune an LM, how do you guarantee that it's learned enough of $P^T$ and forgotten enough of its original training domain? Also, how do you guarantee that it moves away from $P^R$?}
+\vl{QUESTION: If you fine-tune an LM, how do you guarantee that it's learned enough of $P^T$ and forgotten enough of its original training domain? Also, how do you guarantee that it moves away from $P^R$?
+ANSWER: One potential solution is to use a shallow language model and train it \textit{only} on $P^T$, which ensures that the resulting sentence probabilities are defined only over $P^T$.}
 
 \subsection{Estimating $\hat{\mu}(P)$ from the data}
 
@@ -278,11 +279,9 @@ Our target corpus $P^T$ is derived from the U.S. Congressional speeches on the H
 
 \subsection{Results}
 
-\vl{The estimates for $\hat{\mu}$ and $\hat{\tau}$ look pretty reasonable, but need to figure out why the variance estimates are so large / why the CIs are so wide.}
-
 \subsubsection{Classification approach}
 
-We report our treatment effect estimates using the classification approach described in Section \ref{sec:classification}. For each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_clf1}, the classifier is a logistic regression model, and the language representations are embeddings from the pre-trained large language model MPNet. In Table \ref{tab:results_clf2}, the classifier and language representations remain the same, but text probabilities are computed as a marginal product of the individual sentence probabilities. Variance is computed as a sum of $\widehat{\text{Var}}[\hat{\mu}(P_1)]$ and $\widehat{\text{Var}}[\hat{\mu}(P_0)]$.
+We report our treatment effect estimates using the classification approach described in Section \ref{sec:classification}. For each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_clf1}, the classifier is a logistic regression model, and the language representations are embeddings from the pre-trained sentence transformer MPNet. HuggingFace's sentence transformers are designed to be particularly suitable for generating sentence embeddings for a variety of tasks. In Table \ref{tab:results_clf2}, the classifier and language representations remain the same, but text probabilities are computed as a marginal product of the individual sentence probabilities. Variance is computed as a sum of $\widehat{\text{Var}}[\hat{\mu}(P_1)]$ and $\widehat{\text{Var}}[\hat{\mu}(P_0)]$.
 
 \begin{table}[!ht]
     \centering
@@ -290,13 +289,13 @@ We report our treatment effect estimates using the classification approach descr
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 69.528 & 67.087 & \textcolor{green!50!black}{2.441} & [-7.458, 12.340] \\
-        Bravery & 68.384 & 69.487 & \textcolor{red!80!black}{-1.103} & [-12.662, 10.457] \\
-        Mistreatment & 69.570 & 68.757 & \textcolor{green!50!black}{0.813} & [-7.262, 8.887] \\
-        Flags & 67.572 & 69.264 & \textcolor{red!80!black}{-1.692} & [-11.533, -8.149] \\
-        Threat & 67.530 & 69.428 & \textcolor{red!80!black}{-1.898} & [-11.716, -7.922] \\
-        Economy & 65.507 & 69.419 & \textcolor{red!80!black}{-3.912} & [-14.135, 6.312] \\
-        Violation & 66.729 & 69.255 & \textcolor{red!80!black}{-2.526} & [-11.122, 6.070] \\
+        Commitment & 72.087 & 68.743 & \textbf{\textcolor{green!50!black}{3.343}} & [0.294, 6.393] \\
+        Bravery & 74.134 & 69.604 & \textbf{\textcolor{green!50!black}{4.529}} & [1.021, 8.038] \\
+        Mistreatment & 69.844 & 70.972 & \textcolor{red!80!black}{-1.127} & [-4.391, 2.136] \\
+        Flags & 67.943 & 71.138 & \textcolor{red!80!black}{-3.195} & [-6.811, 0.422] \\
+        Threat & 69.034 & 71.32 & \textcolor{red!80!black}{-2.285} & [-5.586, 1.015]  \\
+        Economy & 70.254 & 70.857 & \textcolor{red!80!black}{-0.603} & [-4.308, 3.101] \\
+        Violation & 70.729 & 70.731 & \textcolor{red!80!black}{-0.001} & [-3.495, 3.492] \\
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet.}
@@ -309,13 +308,13 @@ We report our treatment effect estimates using the classification approach descr
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 64.695 & 65.918 & \textcolor{red!80!black}{-1.223} & [-21.573, 19.127] \\
-        Bravery & 63.209 & 68.903 & \textcolor{red!80!black}{-5.694} & [-20.076, 8.688] \\
-        Mistreatment & 67.990 & 65.089 & \textcolor{green!50!black}{2.902} & [-9.678, 15.582] \\
-        Flags & 60.705 & 68.441 & \textcolor{red!80!black}{-7.737} & [-26.754, 11.280] \\
-        Threat & 74.155 & 60.394 & \textcolor{green!50!black}{13.761} & [-4.433, 31.954] \\
-        Economy & 59.555 & 65.373 & \textcolor{red!80!black}{-5.818} & [-22.012, 10.376] \\
-        Violation & 65.028 & 65.210 & \textcolor{red!80!black}{-0.182} & [-12.003, 11.638] \\
+        Commitment & 74.701 & 70.379 & \textcolor{green!50!black}{4.322} & [-1.304, 9.948] \\
+        Bravery & 77.474 & 71.958 & \textcolor{green!50!black}{5.516} & [-1.190, 12.221] \\
+        Mistreatment & 69.899 & 73.844 & \textcolor{red!80!black}{-3.945} & [-9.782, 1.891] \\
+        Flags & 70.762 & 74.209 & \textcolor{red!80!black}{-3.447} & [-10.955, 4.061] \\
+        Threat & 75.492 & 72.778 & \textcolor{green!50!black}{2.714} & [-3.579, 9.008] \\
+        Economy & 75.116 & 73.335 & \textcolor{green!50!black}{1.781} & [-4.563, 8.126] \\
+        Violation & 69.977 & 73.585 & \textcolor{red!80!black}{-3.608} & [-11.861, 4.645] \\
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Text probabilities are computed from marginal sentence probabilities.}
@@ -330,12 +329,12 @@ We report our treatment effect estimates using the classification approach descr
 
 \subsubsection{Language task approach}
 
-\vl{Probably the biggest issue we have is the lack of data---it turns out that the natural text of the HK speeches is not a very large corpus. While the classifier doesn't require much training data because the task is fairly easy, it's unclear if fine-tuning an LLM will require more.
+\vl{Probably the biggest issue we have is the lack of data---it turns out that the natural text of the HK speeches is not a very large corpus. While the classifier doesn't require much training data because the task is fairly easy, it's unclear if properly fine-tuning an LLM requires more.
 \newline
 \newline
 On the other hand, if we're interested in a ``real-world'' target setting without the constraints of it having to be Congressional speeches or about HK, we could just use a pre-trained LLM.}
 
-We report our treatment effect estimates using the language modeling approach described in Section \ref{sec:language_modeling}. Again, for each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_lm1}, due to the small size of the target corpus, we use pre-trained BERT to compute the text probabilities under $P^T$. This means that our target distribution may now be viewed as something akin to the distribution of \textit{all} text, given the extremely large training corpus of BERT. In Table \ref{tab:results_lm2}, we use BERT fine-tuned with a MLM task on a small number of held-out samples (approximately 30) from $P^T$.
+We report our treatment effect estimates using the language modeling approach described in Section \ref{sec:language_modeling}. Again, for each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_lm1}, due to the small size of the target corpus, we use pre-trained GPT-2 to compute the text probabilities under $P^T$. This means that our target distribution may now be viewed as something akin to the distribution of \textit{all} text, given the extremely large training corpus of GPT-2. In Table \ref{tab:results_lm2}, we use GPT-2 fine-tuned with a CLM task on a small number of held-out samples (approximately 30) from $P^T$. In Table \ref{tab:results_lm3}, we use pre-trained GPT-2 but compute marginal sentence probabilities.
 
 \begin{table}[!ht]
     \centering
@@ -343,20 +342,19 @@ We report our treatment effect estimates using the language modeling approach de
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 69.254 & 66.250 & \textcolor{green!50!black}{3.004} & [-9.578, 15.586] \\
-        Bravery & 68.617 & 68.317 & \textcolor{green!50!black}{0.301} & [-10.940, 11.542] \\
-        Mistreatment & 71.439 & 67.742 & \textcolor{green!50!black}{3.696} & [-7.712, 15.103] \\
-        Flags & 63.838 & 68.898 & \textcolor{red!80!black}{-5.060} & [-19.985, 9.865] \\
-        Threat & 67.750 & 68.870 & \textcolor{red!80!black}{-1.120} & [-12.762, 10.522] \\
-        Economy & 64.351 & 69.499 & \textcolor{red!80!black}{-5.148} & [-22.397, 12.101] \\
-        Violation & 69.236 & 68.102 & \textcolor{green!50!black}{1.134} & [-10.067, 12.336] \\
+        Commitment & 71.92 & 68.363 & \textbf{\textcolor{green!50!black}{3.557}} & [1.071, 6.043] \\
+        Bravery & 72.785 & 69.571 & \textbf{\textcolor{green!50!black}{3.214}} & [0.380, 6.048]  \\
+        Mistreatment & 69.633 & 70.303 & \textcolor{red!80!black}{-0.670} & [-3.550, 2.210] \\
+        Flags & 69.022 & 70.422 & \textcolor{red!80!black}{-1.400} & [-4.401, 1.600] \\
+        Threat & 68.908 & 70.505 & \textcolor{red!80!black}{-1.597} & [-4.527, 1.332] \\
+        Economy & 69.971 & 70.235 & \textcolor{red!80!black}{-0.264} & [-3.068, 2.541] \\
+        Violation & 71.025 & 70.013 & \textcolor{green!50!black}{1.011} & [-1.954, 3.977] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained BERT.}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2.}
     \label{tab:results_lm1}
 \end{table}
 
-\vl{Estimates using marginal probabilities with language modeling are pretty unstable. Not sure why?}
 
 \begin{table}[!ht]
     \centering
@@ -364,23 +362,40 @@ We report our treatment effect estimates using the language modeling approach de
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 69.368 & 64.882 & \textcolor{green!50!black}{4.487} & [-7.337, 16.311] \\
-        Bravery & 68.013 & 68.229 & \textcolor{red!80!black}{-0.216} & [-10.948, 10.516] \\
-        Mistreatment & 70.750 & 67.711 & \textcolor{green!50!black}{3.039} & [-7.638, 13.716] \\
-        Flags & 63.571 & 68.671 & \textcolor{red!80!black}{-5.100} & [-19.565, 9.365] \\
-        Threat & 66.362 & 69.418 & \textcolor{red!80!black}{-3.055} & [-13.690, 7.579] \\
-        Economy & 67.308 & 68.363 & \textcolor{red!80!black}{-1.054} & [-16.479, 14.370] \\
-        Violation & 68.099 & 68.209 & \textcolor{red!80!black}{-0.110} & [-10.226, 10.007] \\
+        Commitment & 72.046 & 68.347 & \textbf{\textcolor{green!50!black}{3.699}} & [1.192, 6.205] \\
+        Bravery & 73.1 & 69.598 & \textbf{\textcolor{green!50!black}{3.503}} & [0.644, 6.361] \\
+        Mistreatment & 69.788 & 70.341 & \textcolor{red!80!black}{-0.553} & [-3.447, 2.341] \\
+        Flags & 69.122 & 70.463 & \textcolor{red!80!black}{-1.341} & [-4.373, 1.691] \\
+        Threat & 68.92 & 70.565 & \textcolor{red!80!black}{-1.645} & [-4.616, 1.326] \\
+        Economy & 70.158 & 70.269 & \textcolor{red!80!black}{-0.112} & [-2.921, 2.697] \\
+        Violation & 71.11 & 70.077 & \textcolor{green!50!black}{1.033} & [-1.971, 4.036] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from BERT fine-tuned with an MLM task on a small number of held-out samples from $P^T$.}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
     \label{tab:results_lm2}
 \end{table}
 
-% \vl{Although the scale of the $\hat{\mu}$s seems to make more sense now, the $\hat{\tau}$s are way larger than (a) the ones we get with the classifier approach and (b) the ones from the original paper. I'm guessing that this is because the $P^T$ estimates aren't very stable (they can be very small)? I was hoping that using the marginal sentence probabilities would help, but it doesn't seem to.
-% \newline
-% \newline
-% I also haven't included the CI estimates because the small $P^T$ estimates have made the variance estimate super small, so we'll need to think about that as well.}
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+        \toprule
+        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+        \midrule
+        Commitment & 70.746 & 68.283 & \textcolor{green!50!black}{2.464} & [-0.279, 5.206] \\
+        Bravery & 70.614 & 68.899 & \textcolor{green!50!black}{1.715} & [-1.433, 4.862] \\
+        Mistreatment & 69.645 & 69.276 & \textcolor{green!50!black}{0.369} & [-2.838, 3.575] \\
+        Flags & 68.127 & 69.762 & \textcolor{red!80!black}{-1.634} & [-4.965, 1.697] \\
+        Threat & 68.579 & 69.835 & \textcolor{red!80!black}{-1.255} & [-4.344, 1.833] \\
+        Economy & 69.5 & 69.342 & \textcolor{green!50!black}{0.158} & [-3.013, 3.329]  \\
+        Violation & 69.157 & 69.498 & \textcolor{red!80!black}{-0.341} & [-3.522, 2.839] \\
+        \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Text probabilities are computed from marginal sentence probabilities.}
+    \label{tab:results_lm3}
+\end{table}
+
+\newpage
+\appendix
 
 \section{Extra notes}
 
@@ -443,6 +458,105 @@ Here's an example of how to get the probability of a sentence using the HuggingF
 \end{verbatim}
 
 This code uses the AutoTokenizer and AutoModelForMaskedLM classes from the Transformers library to load a pre-trained model and tokenizer. It then tokenizes the input sentence using the tokenizer, passes the resulting tokens to the model, and computes the probability of the sentence by multiplying together the probabilities of the individual tokens.
+
+\section{Old results}
+
+These results use the old randomization corpus generation method, which did not fully reflect the text generation method used by \cite{fong2021causal}. Additionally, data from the initial study by \cite{fong2021causal} is used, while the current results in the main body of the paper use the results from the replication study.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+        \toprule
+        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+        \midrule
+        Commitment & 69.528 & 67.087 & \textcolor{green!50!black}{2.441} & [-7.458, 12.340] \\
+        Bravery & 68.384 & 69.487 & \textcolor{red!80!black}{-1.103} & [-12.662, 10.457] \\
+        Mistreatment & 69.570 & 68.757 & \textcolor{green!50!black}{0.813} & [-7.262, 8.887] \\
+        Flags & 67.572 & 69.264 & \textcolor{red!80!black}{-1.692} & [-11.533, -8.149] \\
+        Threat & 67.530 & 69.428 & \textcolor{red!80!black}{-1.898} & [-11.716, -7.922] \\
+        Economy & 65.507 & 69.419 & \textcolor{red!80!black}{-3.912} & [-14.135, 6.312] \\
+        Violation & 66.729 & 69.255 & \textcolor{red!80!black}{-2.526} & [-11.122, 6.070] \\
+        \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet.}
+    \label{tab:results_clf1_old}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+        \toprule
+        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+        \midrule
+        Commitment & 64.695 & 65.918 & \textcolor{red!80!black}{-1.223} & [-21.573, 19.127] \\
+        Bravery & 63.209 & 68.903 & \textcolor{red!80!black}{-5.694} & [-20.076, 8.688] \\
+        Mistreatment & 67.990 & 65.089 & \textcolor{green!50!black}{2.902} & [-9.678, 15.582] \\
+        Flags & 60.705 & 68.441 & \textcolor{red!80!black}{-7.737} & [-26.754, 11.280] \\
+        Threat & 74.155 & 60.394 & \textcolor{green!50!black}{13.761} & [-4.433, 31.954] \\
+        Economy & 59.555 & 65.373 & \textcolor{red!80!black}{-5.818} & [-22.012, 10.376] \\
+        Violation & 65.028 & 65.210 & \textcolor{red!80!black}{-0.182} & [-12.003, 11.638] \\
+        \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Text probabilities are computed from marginal sentence probabilities.}
+    \label{tab:results_clf2_old}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+        \toprule
+        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+        \midrule
+        Commitment & 68.377 & 62.907 & \textbf{\textcolor{green!50!black}{5.470}} & [1.944, 8.997] \\
+        Bravery & 65.959 & 67.397 & \textcolor{red!80!black}{-1.439} & [-4.621, 1.744] \\
+        Mistreatment & 68.266 & 66.625 & \textcolor{green!50!black}{1.641} & [-1.622, 4.904] \\
+        Flags & 66.280 & 67.269 & \textcolor{red!80!black}{-0.990} & [-4.175, 2.196] \\
+        Threat & 65.864 & 67.397 & \textcolor{red!80!black}{-1.532} & [-4.666, 1.602] \\
+        Economy & 66.477 & 67.166 & \textcolor{red!80!black}{-0.689} & [-4.026, 2.649] \\
+        Violation & 65.902 & 67.332 & \textcolor{red!80!black}{-1.429} & [-4.691, 1.832] \\
+        \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
+    \label{tab:results_lm2_old}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+        \toprule
+        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+        \midrule
+        Commitment & 67.694 & 61.536 & \textbf{\textcolor{green!50!black}{6.158}} & [2.212, 10.104] \\
+        Bravery & 68.143 & 66.240 & \textcolor{green!50!black}{1.903} & [-1.380, 5.186] \\
+        Mistreatment & 67.370 & 66.621 & \textcolor{green!50!black}{0.749} & [-2.642, 4.139] \\
+        Flags & 66.935 & 66.812 & \textcolor{green!50!black}{0.123} & [-3.065, 3.311] \\
+        Threat & 65.115 & 67.854 & \textcolor{red!80!black}{-2.739} & [-6.073, 0.595] \\
+        Economy & 67.197 & 66.742 & \textcolor{green!50!black}{0.455} & [-2.895, 3.806] \\
+        Violation & 66.283 & 67.180 & \textcolor{red!80!black}{-0.898} & [-4.169, 2.374] \\
+        \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Text probabilities are computed from marginal sentence probabilities.}
+    \label{tab:results_lm3_old}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+        \toprule
+        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+        \midrule
+        Commitment & 69.254 & 66.250 & \textcolor{green!50!black}{3.004} & [-9.578, 15.586] \\
+        Bravery & 68.617 & 68.317 & \textcolor{green!50!black}{0.301} & [-10.940, 11.542] \\
+        Mistreatment & 71.439 & 67.742 & \textcolor{green!50!black}{3.696} & [-7.712, 15.103] \\
+        Flags & 63.838 & 68.898 & \textcolor{red!80!black}{-5.060} & [-19.985, 9.865] \\
+        Threat & 67.750 & 68.870 & \textcolor{red!80!black}{-1.120} & [-12.762, 10.522] \\
+        Economy & 64.351 & 69.499 & \textcolor{red!80!black}{-5.148} & [-22.397, 12.101] \\
+        Violation & 69.236 & 68.102 & \textcolor{green!50!black}{1.134} & [-10.067, 12.336] \\
+        \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained BERT. \vl{This is an improper approach since models trained with MLM, e.g. BERT, can't be used to estimate sentence probabilities directly.}}
+    \label{tab:results_lm1}
+\end{table}
 
 \bibliographystyle{plain}
 \bibliography{ref}
