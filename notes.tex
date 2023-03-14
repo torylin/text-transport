@@ -178,7 +178,7 @@ Language models like transformers are capable of directly computing the probabil
 
 LLMs are often trained using masked language modeling (MLM), where for each training sentence, certain words are randomly masked, and the model must predict them. However, it is important to note that token and sentence probabilities from language models trained with MLM are not statistically or linguistically meaningful. (This was actually \href{https://github.com/google-research/bert/issues/35}{confirmed} by Jacob Devlin when BERT was released.) The token probabilities returned by the model are the probability of the masked token \textit{at a specific position}, \textit{given the rest of the unmasked tokens in the sentence}, rather than the probability of the token \textit{given the preceding tokens in the sentence}. 
 
-Instead, to estimate meaningful sentence probabilities directly, \textit{autoregressive language models}, which are trained on causal language modeling\footnote{There's nothing causal about causal language modeling; it's just a naming convention.} (CLM)/text generation/next-word-prediction tasks, may be used. These include ``shallow'' language models like n-gram language models, as well as autoregressive LLMs like GPT-2, TransformerXL, and XLNet (a full list of autoregressive LLMs implemented by HuggingFace can be found \href{https://huggingface.co/docs/transformers/model_summary#autoregressive-models}{here}).
+Instead, to estimate meaningful sentence probabilities directly, \textit{autoregressive language models}, which are trained on causal language modeling\footnote{There's nothing causal about causal language modeling; it's just a naming convention.} (CLM)/text generation/next-word-prediction tasks, may be used. These include ``shallow'' language models like n-gram language models, as well as autoregressive LLMs like GPT-2, TransformerXL, and XLNet (a partial list of autoregressive LLMs implemented by HuggingFace can be found \href{https://web.archive.org/web/20230125132319/https://huggingface.co/docs/transformers/model_summary#autoregressive-models}{here}).
 
 We can encourage an autoregressive language model $M_\theta$ to learn $P^T$ by fine-tuning it on text examples from $P^T$ using a CLM task. For a practical example of CLM, see \href{https://huggingface.co/docs/transformers/tasks/language_modeling}{this example from HuggingFace}.
 
@@ -426,16 +426,27 @@ For a randomized study to isolate the effect of one text attribute, the texts mu
 
 Fong \& Grimmer claim that (1) the construction of their texts prevents aliasing of measured attributes, but they acknowledge that (2) aliasing of the treatment with unmeasured text attributes, such as the phrasing of sentences or other attributes specific to the randomization text distribution, is still possible. Our work is meant in part to address (2). However, we should check that (1) holds as well. 
 
-One particular concern is that while (1) may hold for the natural language representation of the text, it may not hold for the language representations that we are use experimentally (e.g., MPNet or GPT-2 embeddings). We can check the validity of the claim using t-SNE plots of the candidate sentence embeddings for each text attribute. If the sentence embeddings clearly cluster by text attribute, we can be more confident that the attributes are independent. However, this is not a perfect measure, since for each individual attribute, the wording of the candidate sentences is similar, making it fundamentally more likely for sentences to cluster by attribute.
+One particular concern is that even if (1) holds for the natural language representation of the text, it may not hold for the language representations that we are use experimentally (e.g., MPNet or GPT-2 embeddings). We can check the validity of the claim using t-SNE plots of the candidate sentence embeddings for each text attribute. If the sentence embeddings clearly cluster by text attribute, we can be more confident that the attributes are independent. However, this is not a perfect measure, since for each individual attribute, the wording of the candidate sentences is similar, making it fundamentally more likely for sentences to cluster by attribute.
+
+We construct t-SNE plots of MPNet, BERT, and GPT-2 embeddings (Figure \ref{fig:alias_check}). Currently, we use MPNet embeddings in our classification approach and GPT-2 embeddings in our language modeling approach. While we see that MPNet and BERT embeddings separate clearly by text attribute (though some attributes--- \textit{commitment}/``treatyobligation'' and \textit{mistreatment}/``evil''---seem to form multiple clusters), GPT-2 clusters are less well-formed. This suggests that although GPT-2 produces effect estimates that seem empirically reasonable, we may want to use a different autoregressive language model that has more well-defined clusters.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/all-mpnet-base-v2.png}
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/bert-base-uncased.png}
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/gpt2.png}
-    \caption{Caption}
-    \label{fig:my_label}
+    \caption{t-SNE plots of sentence embeddings color-coded by the associated text attribute.}
+    \label{fig:alias_check}
 \end{figure}
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.45\textwidth]{plots/sanity_check/all-mpnet-base-v2.png}
+%     \includegraphics[width=0.45\textwidth]{plots/sanity_check/bert-base-uncased.png}
+%     \caption{t-SNE plots of sentence embeddings color-coded by the associated text attribute.}
+%     \label{fig:alias_check}
+% \end{figure}
+
 \newpage
 \appendix
 
