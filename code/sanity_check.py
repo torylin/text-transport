@@ -65,6 +65,7 @@ tsne_df = pd.DataFrame()
 tsne_df['c1'] = embeds_t[:,0]
 tsne_df['c2'] = embeds_t[:,1]
 
+sns.set(font_scale=1.5)
 ax = sns.scatterplot(x='c1', y='c2', hue=colors, data=tsne_df)
 sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
 if args.title == None:
