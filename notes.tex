@@ -176,9 +176,9 @@ We have several options for our binary classifier:
 
 Language models like transformers are capable of directly computing the probability of a sentence (see Section \ref{sec:huggingface_sentence_probs}), even if the model has never seen the sentence before. This probability is based on the text distribution used to train the model. Since the state-of-the-art large language models (LLMs) are pre-trained on extremely large corpora that approximate the entirety of the English language, we must further fine-tune before we can use them to compute sentence probabilities for $P^T$.
 
-LLMs are often trained using masked language modeling (MLM), where for each training sentence, certain words are randomly masked, and the model must predict them. However, it is important to note that token and sentence probabilities from language models trained with MLM are not statistically or linguistically meaningful. (This was actually \href{https://github.com/google-research/bert/issues/35}{confirmed} by Jacob Devlin when BERT was released.) The token probabilities returned by the model are the probability of the masked token \textit{at a specific position}, \textit{given the rest of the unmasked tokens in the sentence}, rather than the probability of the token \textit{given the preceding tokens in the sentence}. 
+LLMs are often trained using masked language modeling (MLM), where for each training sentence, certain words are randomly masked, and the model must predict them. However, it is important to note that token and sentence probabilities from language models trained with MLM are not statistically or linguistically meaningful (this was actually \href{https://github.com/google-research/bert/issues/35}{confirmed} by Jacob Devlin when BERT was released). The token probabilities returned by the model are the probability of the masked token \textit{at a specific position}, \textit{given the rest of the unmasked tokens in the sentence}, rather than the probability of the token \textit{given the preceding tokens in the sentence}. 
 
-Instead, to estimate meaningful sentence probabilities directly, \textit{autoregressive language models}, which are trained on causal language modeling\footnote{There's nothing causal about causal language modeling; it's just a naming convention.} (CLM)/text generation/next-word-prediction tasks, may be used. These include ``shallow'' language models like n-gram language models, as well as autoregressive LLMs like GPT-2, TransformerXL, and XLNet (a partial list of autoregressive LLMs implemented by HuggingFace can be found \href{https://web.archive.org/web/20230125132319/https://huggingface.co/docs/transformers/model_summary#autoregressive-models}{here}).
+Instead, to estimate meaningful sentence probabilities directly, \textit{autoregressive language models}, which are trained on causal language modeling\footnote{There's nothing causal about causal language modeling; it's just a naming convention.} (CLM)/text generation/next-word-prediction tasks, may be used. These include ``shallow'' language models like n-gram language models, as well as autoregressive LLMs like GPT-2, TransformerXL, and Reformer (a partial list of autoregressive LLMs implemented by HuggingFace can be found \href{https://web.archive.org/web/20230125132319/https://huggingface.co/docs/transformers/model_summary#autoregressive-models}{here}).
 
 We can encourage an autoregressive language model $M_\theta$ to learn $P^T$ by fine-tuning it on text examples from $P^T$ using a CLM task. For a practical example of CLM, see \href{https://huggingface.co/docs/transformers/tasks/language_modeling}{this example from HuggingFace}.
 
@@ -301,7 +301,7 @@ Our target corpus $P^T$ is derived from the U.S. Congressional speeches on the H
 
 \subsubsection{Classification approach}
 
-We report our treatment effect estimates using the classification approach described in Section \ref{sec:classification}. For each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_clf1}, the classifier is a logistic regression model, and the language representations are embeddings from the pre-trained sentence transformer MPNet. HuggingFace's sentence transformers are designed to be particularly suitable for generating sentence embeddings for a variety of tasks. In Table \ref{tab:results_clf2}, the classifier and language representations remain the same, but text probabilities are computed as a marginal product of the individual sentence probabilities. Variance is computed as a sum of $\widehat{\text{Var}}[\hat{\mu}(P_1)]$ and $\widehat{\text{Var}}[\hat{\mu}(P_0)]$.
+We report our treatment effect estimates using the classification approach described in Section \ref{sec:classification}. For each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_clf_mpnet}, the classifier is a logistic regression model, and the language representations are embeddings from the pre-trained sentence transformer MPNet \cite{song2020mpnet}. HuggingFace's sentence transformers are designed to be particularly suitable for generating sentence embeddings for a variety of tasks. In Table \ref{tab:results_clf_mpnet_marginal}, the classifier and language representations remain the same, but text probabilities are computed as a marginal product of the individual sentence probabilities. Variance is computed as a sum of $\widehat{\text{Var}}[\hat{\mu}(P_1)]$ and $\widehat{\text{Var}}[\hat{\mu}(P_0)]$.
 
 \begin{table}[!ht]
     \centering
@@ -319,7 +319,7 @@ We report our treatment effect estimates using the classification approach descr
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet.}
-    \label{tab:results_clf1}
+    \label{tab:results_clf_mpnet}
 \end{table}
 
 \begin{table}[!ht]
@@ -338,7 +338,7 @@ We report our treatment effect estimates using the classification approach descr
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Text probabilities are computed from marginal sentence probabilities.}
-    \label{tab:results_clf2}
+    \label{tab:results_clf_mpnet_marginal}
 \end{table}
 
 % These initial results differ somewhat from the original findings in \cite{fong2021causal},. Since the original study fails to reject the null for all effects except that of \textit{commitment}, for which they find a positive effect, it is notable that our method reports that commitment corresponds to a negative effect.
@@ -354,7 +354,7 @@ We report our treatment effect estimates using the classification approach descr
 \newline
 On the other hand, if we're interested in a ``real-world'' target setting without the constraints of it having to be Congressional speeches or about HK, we could just use a pre-trained LLM.}
 
-We report our treatment effect estimates using the language modeling approach described in Section \ref{sec:language_modeling}. Again, for each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_lm1}, due to the small size of the target corpus, we use pre-trained GPT-2 to compute the text probabilities under $P^T$. This means that our target distribution may now be viewed as something akin to the distribution of \textit{all} text, given the extremely large training corpus of GPT-2. In Table \ref{tab:results_lm2}, we use GPT-2 fine-tuned with a CLM task on a small number of held-out samples (approximately 30) from $P^T$. In Table \ref{tab:results_lm3}, we use pre-trained GPT-2 but compute marginal sentence probabilities.
+We report our treatment effect estimates using the language modeling approach described in Section \ref{sec:language_modeling}. Again, for each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_clm_gpt2}, due to the small size of the target corpus, we use pre-trained GPT-2 \cite{radford2019language} to compute the text probabilities under $P^T$. This means that our target distribution may now be viewed as something akin to the distribution of \textit{all} text, given the extremely large training corpus of GPT-2. In Table \ref{tab:results_clm_gpt2_finetuned}, we use GPT-2 fine-tuned with a CLM task on a small number of held-out samples (approximately 30) from $P^T$. In Table \ref{tab:results_clm_gpt2_marginal}, we use pre-trained GPT-2 but compute marginal sentence probabilities.
 
 \begin{table}[!ht]
     \centering
@@ -372,7 +372,7 @@ We report our treatment effect estimates using the language modeling approach de
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2.}
-    \label{tab:results_lm1}
+    \label{tab:results_clm_gpt2}
 \end{table}
 
 
@@ -392,7 +392,7 @@ We report our treatment effect estimates using the language modeling approach de
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
-    \label{tab:results_lm2}
+    \label{tab:results_clm_gpt2_finetuned}
 \end{table}
 
 \begin{table}[!ht]
@@ -411,7 +411,7 @@ We report our treatment effect estimates using the language modeling approach de
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Text probabilities are computed from marginal sentence probabilities.}
-    \label{tab:results_lm3}
+    \label{tab:results_clm_gpt2_marginal}
 \end{table}
 
 \subsection{Discussion}
@@ -426,11 +426,9 @@ For a randomized study to isolate the effect of one text attribute, the texts mu
 
 Fong \& Grimmer claim that (1) the construction of their texts prevents aliasing of measured attributes, but they acknowledge that (2) aliasing of the treatment with unmeasured text attributes, such as the phrasing of sentences or other attributes specific to the randomization text distribution, is still possible. Our work is meant in part to address (2). However, we should check that (1) holds as well. 
 
-One particular concern is that even if (1) holds for the natural language representation of the text, it may not hold for the language representations that we are use experimentally (e.g., MPNet or GPT-2 embeddings). We can check the validity of the claim using t-SNE plots of the candidate sentence embeddings for each text attribute. If the sentence embeddings clearly cluster by text attribute, we can be more confident that the attributes are independent. However, this is not a perfect measure, since for each individual attribute, the wording of the candidate sentences is similar, making it fundamentally more likely for sentences to cluster by attribute.
+One particular concern is that even if (1) holds for the natural language representation of the text, it may not hold for the language representations that we are using experimentally (e.g., MPNet or GPT-2 embeddings). We can check the validity of the claim using t-SNE plots of the candidate sentence embeddings for each text attribute. If the sentence embeddings clearly cluster by text attribute, we can be more confident that the attributes are independent. However, this is not a perfect measure, since for each individual attribute, the wording of the candidate sentences is similar, making it fundamentally more likely for sentences to cluster by attribute.
 
-We construct t-SNE plots of MPNet, BERT, and GPT-2 embeddings (Figure \ref{fig:alias_check}). Currently, we use MPNet embeddings in our classification approach and GPT-2 embeddings in our language modeling approach. While we see that MPNet and BERT embeddings separate clearly by text attribute (though some attributes--- \textit{commitment}/``treatyobligation'' and \textit{mistreatment}/``evil''---seem to form multiple clusters), GPT-2 clusters are less well-formed. This suggests that although GPT-2 produces effect estimates that seem empirically reasonable, we may want to use a different autoregressive language model that has more well-defined clusters.
-
-\begin{figure}
+\begin{figure}[!ht]
     \centering
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/all-mpnet-base-v2.png}
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/bert-base-uncased.png}
@@ -439,13 +437,36 @@ We construct t-SNE plots of MPNet, BERT, and GPT-2 embeddings (Figure \ref{fig:a
     \label{fig:alias_check}
 \end{figure}
 
-% \begin{figure}
-%     \centering
-%     \includegraphics[width=0.45\textwidth]{plots/sanity_check/all-mpnet-base-v2.png}
-%     \includegraphics[width=0.45\textwidth]{plots/sanity_check/bert-base-uncased.png}
-%     \caption{t-SNE plots of sentence embeddings color-coded by the associated text attribute.}
-%     \label{fig:alias_check}
-% \end{figure}
+We construct t-SNE plots of MPNet, BERT \cite{devlin2019bert}, and GPT-2 embeddings (Figure \ref{fig:alias_check}). Currently, we use MPNet embeddings in our classification approach and GPT-2 embeddings in our language modeling approach. While we see that MPNet and BERT embeddings separate clearly by text attribute (though some attributes--- \textit{commitment}/``treatyobligation'' and \textit{mistreatment}/``evil''---seem to form multiple clusters), GPT-2 clusters are less well-formed. This suggests that although GPT-2 produces effect estimates that seem empirically reasonable, we may want to use a different autoregressive language model that has more well-defined clusters. \vl{Or does it really matter, since we're not using GPT-2 language representations, only using it to estimate probabilities?}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.45\textwidth]{plots/sanity_check/reformer.png}
+    \includegraphics[width=0.45\textwidth]{plots/sanity_check/transfo-xl-wt103.png}
+    \caption{t-SNE plots of sentence embeddings color-coded by the associated text attribute.}
+    \label{fig:alias_check2}
+\end{figure}
+
+Plots of Reformer \cite{kitaev2020reformer} and TransformerXL \cite{dai2019transformerxl} (Figure \ref{fig:alias_check2}) show better separation by text attribute. We report additional results from the language modeling approach using these models to estimate text probabilities in Tables 
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+        \toprule
+        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+        \midrule
+        Commitment & 72.087 & 68.743 & \textbf{\textcolor{green!50!black}{3.343$^*$}} & [0.294, 6.393] \\
+        Bravery & 74.134 & 69.604 & \textbf{\textcolor{green!50!black}{4.529$^*$}} & [1.021, 8.038] \\
+        Mistreatment & 69.844 & 70.972 & \textcolor{red!80!black}{-1.127} & [-4.391, 2.136] \\
+        Flags & 67.943 & 71.138 & \textcolor{red!80!black}{-3.195} & [-6.811, 0.422] \\
+        Threat & 69.034 & 71.32 & \textcolor{red!80!black}{-2.285} & [-5.586, 1.015]  \\
+        Economy & 70.254 & 70.857 & \textcolor{red!80!black}{-0.603} & [-4.308, 3.101] \\
+        Violation & 70.729 & 70.731 & \textcolor{red!80!black}{-0.001} & [-3.495, 3.492] \\
+        \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from .}
+    \label{tab:results_clm_reformer}
+\end{table}
 
 \newpage
 \appendix
@@ -608,9 +629,10 @@ These results use the old randomization corpus generation method, which did not 
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained BERT. \vl{This is an improper approach since models trained with MLM, e.g. BERT, can't be used to estimate sentence probabilities directly.}}
-    \label{tab:results_lm1}
+    \label{tab:results_lm1_bert}
 \end{table}
 
+\newpage
 \bibliographystyle{plain}
 \bibliography{ref}
 
