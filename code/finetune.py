@@ -69,6 +69,7 @@ training_args = TrainingArguments(
     num_train_epochs=args.num_epochs,
     weight_decay=args.decay,
     per_device_train_batch_size=args.batch_size,
+    per_device_eval_batch_size=args.batch_size,
     evaluation_strategy='epoch',
     save_strategy='epoch',
     load_best_model_at_end=True,
