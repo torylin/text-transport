@@ -428,7 +428,7 @@ Fong \& Grimmer claim that (1) the construction of their texts prevents aliasing
 
 One particular concern is that even if (1) holds for the natural language representation of the text, it may not hold for the language representations that we are using experimentally (e.g., MPNet or GPT-2 embeddings). We can check the validity of the claim using t-SNE plots of the candidate sentence embeddings for each text attribute. If the sentence embeddings clearly cluster by text attribute, we can be more confident that the attributes are independent. However, this is not a perfect measure, since for each individual attribute, the wording of the candidate sentences is similar, making it fundamentally more likely for sentences to cluster by attribute.
 
-\begin{figure}[!ht]
+\begin{figure}
     \centering
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/all-mpnet-base-v2.png}
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/bert-base-uncased.png}
@@ -439,15 +439,16 @@ One particular concern is that even if (1) holds for the natural language repres
 
 We construct t-SNE plots of MPNet, BERT \cite{devlin2019bert}, and GPT-2 embeddings (Figure \ref{fig:alias_check}). Currently, we use MPNet embeddings in our classification approach and GPT-2 embeddings in our language modeling approach. While we see that MPNet and BERT embeddings separate clearly by text attribute (though some attributes--- \textit{commitment}/``treatyobligation'' and \textit{mistreatment}/``evil''---seem to form multiple clusters), GPT-2 clusters are less well-formed. This suggests that although GPT-2 produces effect estimates that seem empirically reasonable, we may want to use a different autoregressive language model that has more well-defined clusters. \vl{Or does it really matter, since we're not using GPT-2 language representations, only using it to estimate probabilities?}
 
-\begin{figure}[!ht]
+\begin{figure}
     \centering
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/reformer.png}
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/transfo-xl-wt103.png}
+    \includegraphics[width=0.45\textwidth]{plots/sanity_check/transfo-xl-wt103-finetuned.png}
     \caption{t-SNE plots of sentence embeddings color-coded by the associated text attribute.}
     \label{fig:alias_check2}
 \end{figure}
 
-Plots of Reformer \cite{kitaev2020reformer} and TransformerXL \cite{dai2019transformerxl} (Figure \ref{fig:alias_check2}) show better separation by text attribute. We report additional results from the language modeling approach using these models to estimate text probabilities in Tables 
+t-SNE plots of Reformer \cite{kitaev2020reformer} and TransformerXL \cite{dai2019transformerxl} (Figure \ref{fig:alias_check2}) show better separation by text attribute. We report additional results from the language modeling approach using these models to estimate text probabilities in Tables \ref{tab:results_clm_reformer} and 
 
 \begin{table}[!ht]
     \centering
@@ -455,16 +456,16 @@ Plots of Reformer \cite{kitaev2020reformer} and TransformerXL \cite{dai2019trans
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 72.087 & 68.743 & \textbf{\textcolor{green!50!black}{3.343$^*$}} & [0.294, 6.393] \\
-        Bravery & 74.134 & 69.604 & \textbf{\textcolor{green!50!black}{4.529$^*$}} & [1.021, 8.038] \\
-        Mistreatment & 69.844 & 70.972 & \textcolor{red!80!black}{-1.127} & [-4.391, 2.136] \\
-        Flags & 67.943 & 71.138 & \textcolor{red!80!black}{-3.195} & [-6.811, 0.422] \\
-        Threat & 69.034 & 71.32 & \textcolor{red!80!black}{-2.285} & [-5.586, 1.015]  \\
-        Economy & 70.254 & 70.857 & \textcolor{red!80!black}{-0.603} & [-4.308, 3.101] \\
-        Violation & 70.729 & 70.731 & \textcolor{red!80!black}{-0.001} & [-3.495, 3.492] \\
+        Commitment & 70.779 & 68.715 & \textcolor{green!50!black}{2.064} & [-0.467, 4.596] \\
+        Bravery & 71.041 & 69.275 & \textcolor{green!50!black}{1.766} & [-1.122, 4.654] \\
+        Mistreatment & 70.174 & 69.62 & \textcolor{green!50!black}{0.554} & [-2.374, 3.482] \\
+        Flags & 68.226 & 70.275 & \textcolor{red!80!black}{-2.049} & [-5.085, 0.987] \\
+        Threat & 68.883 & 70.148 & \textcolor{red!80!black}{-1.265} & [-4.099, 1.568]  \\
+        Economy & 69.332 & 70.005 & \textcolor{red!80!black}{-0.673} & [-3.509, 2.163] \\
+        Violation & 70.166 & 69.63 & \textcolor{green!50!black}{0.536} & [-2.381, 3.453] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from .}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from Reformer fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
     \label{tab:results_clm_reformer}
 \end{table}
 
