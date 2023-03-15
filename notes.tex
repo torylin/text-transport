@@ -443,12 +443,30 @@ We construct t-SNE plots of MPNet, BERT \cite{devlin2019bert}, and GPT-2 embeddi
     \centering
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/reformer.png}
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/transfo-xl-wt103.png}
+    \includegraphics[width=0.45\textwidth]{plots/sanity_check/reformer-finetuned.png}
     \includegraphics[width=0.45\textwidth]{plots/sanity_check/transfo-xl-wt103-finetuned.png}
     \caption{t-SNE plots of sentence embeddings color-coded by the associated text attribute.}
     \label{fig:alias_check2}
 \end{figure}
 
-t-SNE plots of Reformer \cite{kitaev2020reformer} and TransformerXL \cite{dai2019transformerxl} (Figure \ref{fig:alias_check2}) show better separation by text attribute. We report additional results from the language modeling approach using these models to estimate text probabilities in Tables \ref{tab:results_clm_reformer} and 
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+        \toprule
+        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+        \midrule
+        Commitment & 71.242 & 68.785 & \textbf{\textcolor{green!50!black}{2.457$^*$}} & [0.024, 4.891] \\
+        Bravery & 71.509 & 69.707 & \textcolor{green!50!black}{1.802} & [-1.004, 4.608] \\
+        Mistreatment & 70.352 & 70.032 & \textcolor{green!50!black}{0.320} & [-2.516, 3.155] \\
+        Flags & 68.436 & 70.544 & \textcolor{red!80!black}{-2.108} & [-5.121, 0.906] \\
+        Threat & 68.697 & 70.517 & \textcolor{red!80!black}{-1.820} & [-4.626, 0.986]  \\
+        Economy & 68.597 & 70.547 & \textcolor{red!80!black}{-1.950} & [-4.782, 0.882] \\
+        Violation & 70.369 & 69.985 & \textcolor{green!50!black}{0.384} & [-2.515, 3.282] \\
+        \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from Reformer fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
+    \label{tab:results_clm_reformer}
+\end{table}
 
 \begin{table}[!ht]
     \centering
@@ -465,9 +483,11 @@ t-SNE plots of Reformer \cite{kitaev2020reformer} and TransformerXL \cite{dai201
         Violation & 70.166 & 69.63 & \textcolor{green!50!black}{0.536} & [-2.381, 3.453] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from Reformer fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
-    \label{tab:results_clm_reformer}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from TransformerXL fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
+    \label{tab:results_clm_transformerxl}
 \end{table}
+
+t-SNE plots of Reformer \cite{kitaev2020reformer} and TransformerXL \cite{dai2019transformerxl} (Figure \ref{fig:alias_check2}) show better separation by text attribute. We report additional results from the language modeling approach using these models to estimate text probabilities in Tables \ref{tab:results_clm_reformer} and \ref{tab:results_clm_transformerxl}. These estimates are somewhat more conservative that the ones produced by GPT-2 (in that only \textit{commitment} has a significant effect, and even then only for Reformer), and the effect directions are now consistent with the original study. 
 
 \newpage
 \appendix
