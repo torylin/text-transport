@@ -8,7 +8,7 @@ conditions=(conditional_prob)
 # methods=(clf lm)
 methods=(clm)
 params=()
-lm_name=google/reformer-crime-and-punishment
+lm_name=/home/victorialin/Documents/2022-2023/causal_text/models/transfo-xl-wt103/best_model/
 batch_size=8
 
 for method in ${methods[@]}
