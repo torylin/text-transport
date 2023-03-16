@@ -232,6 +232,7 @@ if args.method == 'mlm' or args.method == 'clm':
         # var_list1 = np.array(list(map(partial(get_var_lm, df=df_random, weights=weights1,
                                             #   y_mean=np.mean(df_random[df_random[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
         y_mean1 = np.mean(df_random[df_random[args.treatment]==1]['resp'].values)
+        y_mean0 = np.mean(df_random[df_random[args.treatment]==0]['resp'].values)
         # var_list1 = (weights1[df_random[df_random[args.treatment]==1].index]**2)*((df_random[df_random[args.treatment]==1]['resp'].values-y_mean1)**2)*(1-1/df_random.shape[0])
         var_list1 = (weights1[df_random[df_random[args.treatment]==1].index]**2)*((df_random[df_random[args.treatment]==1]['resp'].values)**2)*(1-1/df_random.shape[0])
         # var_list1 = (weights1[df_random[df_random[args.treatment]==1].index]**2)*((df_random[df_random[args.treatment]==1]['resp'].values-y_mean1)**2)
@@ -243,7 +244,6 @@ if args.method == 'mlm' or args.method == 'clm':
         # var_list0 = np.array(list(map(partial(get_var_lm, df=df_random, weights=weights0,
                                             #   y_mean=np.mean(df_random[df_random[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
         # varhat0 = np.sum(var_list0)/((df_random.shape[0]*(1-treat_prob))**2)
-        y_mean0 = np.mean(df_random[df_random[args.treatment]==0]['resp'].values)
         # var_list0 = (weights0[df_random[df_random[args.treatment]==0].index]**2)*((df_random[df_random[args.treatment]==0]['resp'].values-y_mean0)**2)*(1-1/df_random.shape[0])
         var_list0 = (weights0[df_random[df_random[args.treatment]==0].index]**2)*((df_random[df_random[args.treatment]==0]['resp'].values)**2)*(1-1/df_random.shape[0])
         # var_list0 = (weights0[df_random[df_random[args.treatment]==0].index]**2)*((df_random[df_random[args.treatment]==0]['resp'].values-y_mean0)**2)
@@ -357,6 +357,7 @@ elif args.method == 'clf':
         # var_list = np.array(list(map(partial(get_var_clf, df=df_random_test), tqdm(idxs))))
         # varhat = np.sum(var_list)/(df_random_test.shape[0]**2)
         y_mean1 = np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)
+        y_mean0 = np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)
         # var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values-y_mean1)**2)*(1-1/df_random_test.shape[0])
         var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values)**2)*(1-pr_x)
         # var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values-y_mean1)**2)
@@ -371,7 +372,6 @@ elif args.method == 'clf':
         # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
         #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
         # varhat0 = np.sum(var_list0)/((df_random_test.shape[0]*(1-treat_prob))**2)
-        y_mean0 = np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)
         # var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values-y_mean0)**2)*(1-1/df_random_test.shape[0])
         var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values)**2)*(1-pr_x)
         # var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values-y_mean0)**2)
