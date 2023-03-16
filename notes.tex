@@ -107,21 +107,47 @@ We can show that $\hat{\mu}(P^T)$ is an unbiased estimator for $\mu(P^T)$:
 
 Finally, letting $\mathcal{X}$ be the space of all texts, the variance of the estimator is given by:
 \begin{align*}
-    \text{Var}[\hat{\mu}(P)] &= \text{Var}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
-    &= \text{Cov}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{1}{n} \sum_{j=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
-    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
+    \text{Var}[\hat{\mu}(P)] &= \text{Var}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+    &= \text{Cov}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{1}{n} \sum_{j=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
+    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}, \sum_{x' \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}\right] \\
-    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x), \int_{x'}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_j(x')\mathbbm{1}\{X_j=x'\}d\mathbb{P}^R(x')\right] \\
-    &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n \int_x \int_{x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') \text{Cov})_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
-    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') \text{Cov}_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
-    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') (P^R(x,x') - P^R(x)P^R(x'))d\mathbb{P}^R(x)d\mathbb{P}^R(x')
+    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x), \int_{x'}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_j(x')\mathbbm{1}\{X_j=x'\}d\mathbb{P}^R(x')\right] \\
+    &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n \int_x \int_{x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+    % &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') (P^R(x,x') - P^R(x)P^R(x'))d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \Big[\mathbb{E}[Y_i(x)Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')\Big] d\mathbb{P}^R(x)d\mathbb{P}^R(x')
 \end{align*}
-\eli{I think this generally gets to the right place, but e.g. the inner term in some of those covariances should be $\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x)$, so that only $\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x)$ is random}
+
 where the last equality follows from
 \begin{align*}
-    \text{Cov}[\mathbbm{1}\{X_i=x\},\mathbbm{1}\{X_j=x'\}] &=\mathbb{E}_X[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}] - \mathbb{E}_X[\mathbbm{1}\{X_i=x\}]\mathbb{E}_X[\mathbbm{1}\{X_j=x'\}] \\
-    &= P^R(x,x') - P^R(x)P^R(x')
+    \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}] &=
+    \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}Y_j(x')\mathbbm\{X_j=x'\}] - \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}]\mathbb{E}[Y_j(x')\mathbbm{1}\{X_j=x'\}] \\
+    &= \mathbb{E}[Y_i(x)Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}] \\&\qquad - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}]\mathbb{E}[\mathbbm{1}\{X_j=x'\}] \\
+    &=\mathbb{E}[Y_i(x)Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')
 \end{align*}
+
+Assuming independence of treatments, this further reduces to
+\begin{align*}
+    \text{Var}[\hat{\mu}(P)] &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \Big[\mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')\Big] d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')](P^R(x,x') - P^R(x)P^R(x')) d\mathbb{P}^R(x)d\mathbb{P}^R(x')
+\end{align*}
+
+% \begin{align*}
+%     \text{Var}[\hat{\mu}(P)] &= \text{Var}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+%     &= \text{Cov}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{1}{n} \sum_{j=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
+%     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
+%     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}, \sum_{x' \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}\right] \\
+%     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x), \int_{x'}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_j(x')\mathbbm{1}\{X_j=x'\}d\mathbb{P}^R(x')\right] \\
+%     &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n \int_x \int_{x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') \text{Cov}_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+%     &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') \text{Cov}_X[\mathbbm{1}\{X_i=x\}, \mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+%     &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') (P^R(x,x') - P^R(x)P^R(x'))d\mathbb{P}^R(x)d\mathbb{P}^R(x')
+% \end{align*}
+% \eli{I think this generally gets to the right place, but e.g. the inner term in some of those covariances should be $\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x)$, so that only $\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x)$ is random}
+% where the last equality follows from
+% \begin{align*}
+%     \text{Cov}[\mathbbm{1}\{X_i=x\},\mathbbm{1}\{X_j=x'\}] &=\mathbb{E}_X[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}] - \mathbb{E}_X[\mathbbm{1}\{X_i=x\}]\mathbb{E}_X[\mathbbm{1}\{X_j=x'\}] \\
+%     &= P^R(x,x') - P^R(x)P^R(x')
+% \end{align*}
 
 With the central limit theorem (CLT), we establish asymptotic normality:
 \begin{equation*}
@@ -133,10 +159,18 @@ which we can use to estimate confidence intervals using the following unbiased e
     \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i,j \in [n]} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j)\frac{P^R(X_i,X_j) - P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
 \end{equation*}
 
-\vl{The last term of the variance is 0 unless $i=j$, in which case it becomes $$\frac{P^R(X_i,X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_i)} = \frac{P^R(X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i)} = 1-P^R(X_j)$$}
+In our experimental setting, the variance is 0 unless $i=j$, in which case
+$$\frac{P^R(X_i,X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_i)} = \frac{P^R(X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i)} = 1-P^R(X_j)$$
 
-\vl{QUESTION: Do we compute variance estimates separately for $\hat{\mu}(P_1)$ and $\hat{\mu}(P_1)$, then compute $$\widehat{\text{Var}}(\hat{\tau})=\frac{\widehat{\text{Var}}[\hat{\mu}(P_1)]}{n^2P(g(X)=1)^2} + \frac{\widehat{\text{Var}}[\hat{\mu}(P_0)]}{n^2P(g(X)=0)^2}$$ Or do we use this variance estimate over the whole sample to directly get $\widehat{\text{Var}}(\hat{\tau})$?
-ANSWER: In the finite-sample setting, adding the variance estimates is fine. In the non-finite-sample setting, the variance estimation is more involved.}
+Consequently, we have
+\begin{equation*}
+    \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i \in [n]} \left(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\right)^2 (Y_i(X_i))^2 (1-P^R(X_i))
+\end{equation*}
+
+% $$\widehat{\text{Var}}[\hat{\mu}(P)] =\frac{1}{|D_1|(|D_1|-1)} \sum_{i \in D_1} \gamma_i^2(Y_i-\overline{Y}_{D_1}) + \frac{1}{|D_0|(|D_0|-1)} \sum_{j \in D_0} \gamma_j^2(Y_j-\overline{Y}_{D_0})^2$$
+
+% \vl{QUESTION: Do we compute variance estimates separately for $\hat{\mu}(P_1)$ and $\hat{\mu}(P_1)$, then compute $$\widehat{\text{Var}}(\hat{\tau})=\frac{\widehat{\text{Var}}[\hat{\mu}(P_1)]}{n^2P(g(X)=1)^2} + \frac{\widehat{\text{Var}}[\hat{\mu}(P_0)]}{n^2P(g(X)=0)^2}$$ Or do we use this variance estimate over the whole sample to directly get $\widehat{\text{Var}}(\hat{\tau})$?
+% ANSWER: In the finite-sample setting, adding the variance estimates is fine. In the non-finite-sample setting, the variance estimation is more involved.}
 
 \section{Empirical estimation}
 \subsection{Estimating $\hat{P}^T$ from the data}
@@ -281,7 +315,7 @@ Our randomization corpus $P^R$ is taken from \cite{fong2021causal}, where texts 
         Treatment & $\hat{\tau}$ & 95\% CI \\
         \midrule
         Commitment & \textbf{\textcolor{green!50!black}{2.68$^*$}} & [0.27, 5.09] \\
-        Bravery & \textcolor{green!50!black}{4.529} & [-0.85, 4.55] \\
+        Bravery & \textcolor{green!50!black}{1.85} & [-0.85, 4.55] \\
         Mistreatment & \textcolor{green!50!black}{0.14} & [-2.58, 2.86] \\
         Flags & \textcolor{red!80!black}{-2.12} & [-4.84, 0.60] \\
         Threat & \textcolor{red!80!black}{-2.07} & [-4.74, 0.60]  \\
