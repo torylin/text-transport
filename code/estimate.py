@@ -19,6 +19,7 @@ from tqdm import tqdm
 from functools import partial
 from transformers.utils import logging
 from tabulate import tabulate
+from statsmodels.regression.linear_model import OLS, WLS
 
 from utils import get_embeds
 
@@ -77,10 +78,6 @@ def get_prob_clm(dataloader):
 def get_var_clf(idx, df, weights, y_mean):
     i = idx[0]
     j = idx[1]
-    # d_xi = probs[i, 1]*corp_prob[0]/(corp_prob[1]*probs[i, 0])
-    # d_xj = probs[j, 1]*corp_prob[0]/(corp_prob[1]*probs[j, 0])
-    # d_xi /= weight_norm
-    # d_xj /= weight_norm
     d_xi = weights[i]
     d_xj = weights[j]
     # yi = df['resp'].values[i] - y_mean
@@ -90,19 +87,12 @@ def get_var_clf(idx, df, weights, y_mean):
     if i != j:
         return 0
     val = d_xi*d_xj*yi*yj*(1-1/df.shape[0])
-    # pr_xixj = pr_xi = pr_xj = 1/df.shape[0]
-
-    # val = d_xi*d_xj*yi*yj*(pr_xixj-pr_xi*pr_xj)/pr_xixj
 
     return val
 
 def get_var_lm(idx, df, weights, y_mean):
     i = idx[0]
     j = idx[1]
-    # p_xi = all_probs[i]/(df.shape[0]*norm_sum)
-    # p_xj = all_probs[j]/(df.shape[0]*norm_sum)
-    # p_xi /= weight_norm
-    # p_xj /= weight_norm
     p_xi = weights[i]
     p_xj = weights[j]
     # yi = df['resp'].values[i] - y_mean
@@ -112,11 +102,80 @@ def get_var_lm(idx, df, weights, y_mean):
     if i != j:
         return 0
     val = p_xi*p_xj*yi*yj*(1-1/df.shape[0])
-    # pr_xixj = pr_xi = pr_xj = 1/df.shape[0]
-
-    # val = p_xi*p_xj*yi*yj*(pr_xixj-pr_xi*pr_xj)/pr_xixj
 
     return val
+
+def get_estimate(estimate, method, treatment, ci):
+    if estimate == 'diff':       
+        n1 = np.sum(df[treatment].values)
+        n0 = np.sum(1-df[treatment].values)
+        if method == 'clm' or method == 'mlm':
+            weights1_noadj = all_probs*df[treatment].values/(pr_x*norm_sum)
+            weights0_noadj = all_probs*(1-df[treatment].values)/(pr_x*norm_sum)
+        elif method == 'clf':
+            weights1_noadj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df[treatment].values
+            weights0_noadj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*(1-df[treatment].values)
+        
+        weight_norm1 = np.sum(weights1_noadj)/n1
+        weights1 = weights1_noadj/weight_norm1
+        mu1 = np.sum(weights1*df['resp'].values)/n1
+
+        weight_norm0 = np.sum(weights0_noadj)/n0
+        weights0 = weights0_noadj/weight_norm0
+        mu0 = np.sum(weights0*df['resp'].values)/n0
+
+        est = mu1 - mu0
+
+    elif estimate == 'lr':
+        if method == 'clm' or method == 'mlm':
+            y_adj = df['resp']*all_probs/(pr_x*norm_sum)
+        elif method == 'clf':
+            y_adj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df['resp'].values
+        
+        # weights = weights1
+        # weights[df[args.treatment] == 0] = weights0[df[args.treatment] == 0]
+        ols = OLS(y_adj, df.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1))
+        # ols = WLS(df['resp'].values, df.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1),
+                #   weights=weights**2)
+        ols_result = ols.fit()
+        print(ols_result.summary())
+        quit()
+
+    if ci:
+
+        y_mean1 = np.mean(df[df[treatment]==1]['resp'].values)
+        y_mean0 = np.mean(df[df[treatment]==0]['resp'].values)
+        # var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values-y_mean1)**2)*(1-pr_x)
+        # var_weights1 = (weights1_noadj[df_random_test[df_random_test[args.treatment]==1].index]**2)*(1-pr_x)
+        # var_list1 = var_weights1/(np.sum(var_weights1)/n1)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values)**2)
+        var_list1 = (weights1[df[df[treatment]==1].index]**2)*((df[df[treatment]==1]['resp'].values)**2)*(1-pr_x)
+        # var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values)**2)*pr_x*(1-pr_x)
+        # var_list1 = (weights1[df[df[treatment]==1].index]**2)*((df[df[treatment]==1]['resp'].values-y_mean1)**2)
+
+        # idxs1 = list(itertools.product(df_random_test[df_random_test[args.treatment]==1].index, df_random_test[df_random_test[args.treatment]==1].index))
+        # var_list1 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights1, 
+        #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
+        varhat1 = np.sum(var_list1)/(n1**2)
+        # varhat1 = np.sum(var_list1)/(n1*(n1-1))
+        # idxs0 = list(itertools.product(df_random_test[df_random_test[args.treatment]==0].index, df_random_test[df_random_test[args.treatment]==0].index))
+        # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
+        #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
+        # var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values-y_mean0)**2)*(1-pr_x)
+        # var_weights0 = (weights0_noadj[df_random_test[df_random_test[args.treatment]==0].index]**2)*(1-pr_x)
+        # var_list0 = var_weights0/(np.sum(var_weights0)/n0)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values)**2)
+        var_list0 = (weights0[df[df[treatment]==0].index]**2)*((df[df[treatment]==0]['resp'].values)**2)*(1-pr_x)
+        # var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values)**2)*pr_x*(1-pr_x)
+        # var_list0 = (weights0[df[df[treatment]==0].index]**2)*((df[df[treatment]==0]['resp'].values-y_mean0)**2)
+        varhat0 = np.sum(var_list0)/(n0**2)
+        # varhat0 = np.sum(var_list0)/(n0*(n0-1))
+
+        varhat = varhat1 + varhat0
+        # varhat_alt = (np.sum(var_list1) + np.sum(var_list0))/(df_random_test.shape[0]**2)
+
+        return (mu1, mu0, est, varhat)
+    
+    return (mu1, mu0, est)
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -150,13 +209,16 @@ df_random = pd.read_csv(os.path.join(args.data_dir, 'hk_rct', 'HKRepData.csv'))
 df_target = pd.read_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_corpus_fullprobs.csv'))
 df_random['text_full'] = df_random.text1.fillna('') + ' ' + df_random.text2.fillna('') + ' ' + df_random.text3.fillna('')
 
-df_random_corp = pd.read_pickle(os.path.join(args.data_dir, 'hk_rct', 'randomization_corpus_random_sample.pkl'))
-if args.treatment == 'treatycommit':
-    treat_prob = df_random_corp['treatyobligation'].mean()
-else:
-    treat_prob = df_random_corp[args.treatment].mean()
+# df_random_corp = pd.read_pickle(os.path.join(args.data_dir, 'hk_rct', 'randomization_corpus_random_sample.pkl'))
+# if args.treatment == 'treatycommit':
+#     treat_prob = df_random_corp['treatyobligation'].mean()
+# else:
+#     treat_prob = df_random_corp[args.treatment].mean()
 
 if args.method == 'mlm' or args.method == 'clm':
+
+    df = df_random
+    
     if args.method == 'mlm':
         get_prob_lm = get_prob_mlm
         tokenizer = AutoTokenizer.from_pretrained(args.lm_name, max_length=512, truncation=True, padding=True)
@@ -198,59 +260,6 @@ if args.method == 'mlm' or args.method == 'clm':
         all_probs = get_prob_lm(dataloader)
     
     norm_sum = np.sum(all_probs)
-    pr_x = 1/df_random.shape[0]
-    
-    if args.estimate == 'diff':
-        n1 = np.sum(df_random[args.treatment].values)
-        n0 = np.sum(1-df_random[args.treatment].values)
-        weights1 = all_probs*df_random[args.treatment].values/(pr_x*norm_sum)
-        weight_norm1 = np.sum(weights1)/n1
-        weights1 /= weight_norm1
-        mu1 = np.sum(weights1*df_random['resp'].values)/n1
-
-        weights0 = all_probs*(1-df_random[args.treatment].values)/(pr_x*norm_sum)
-        weight_norm0 = np.sum(weights0)/n0
-        weights0 /= weight_norm0
-        mu0 = np.sum(weights0*df_random['resp'].values)/n0
-
-        # mu1 = np.sum(all_probs*df_random['resp'].values*df_random[args.treatment].values/(pr_x*norm_sum))/(df_random.shape[0]*treat_prob)
-        # mu0 = np.sum(all_probs*df_random['resp'].values*(1-df_random[args.treatment].values)/(pr_x*norm_sum))/(df_random.shape[0]*(1-treat_prob))
-        est = mu1 - mu0
-
-    elif args.estimate == 'lr':
-        y_adj = df_random['resp']*all_probs/(pr_x*norm_sum)
-        lr = LinearRegression()
-        lr.fit(df_random.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1), y_adj)
-        print(df_random.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1).columns)
-        print(lr.coef_)
-        print(lr.intercept_)
-        quit()
-
-    if args.ci:
-    
-        # idxs1 = list(itertools.product(df_random[df_random[args.treatment]==1].index, df_random[df_random[args.treatment]==1].index))
-        # var_list1 = np.array(list(map(partial(get_var_lm, df=df_random, weights=weights1,
-                                            #   y_mean=np.mean(df_random[df_random[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
-        y_mean1 = np.mean(df_random[df_random[args.treatment]==1]['resp'].values)
-        y_mean0 = np.mean(df_random[df_random[args.treatment]==0]['resp'].values)
-        # var_list1 = (weights1[df_random[df_random[args.treatment]==1].index]**2)*((df_random[df_random[args.treatment]==1]['resp'].values-y_mean1)**2)*(1-1/df_random.shape[0])
-        var_list1 = (weights1[df_random[df_random[args.treatment]==1].index]**2)*((df_random[df_random[args.treatment]==1]['resp'].values)**2)*(1-1/df_random.shape[0])
-        # var_list1 = (weights1[df_random[df_random[args.treatment]==1].index]**2)*((df_random[df_random[args.treatment]==1]['resp'].values-y_mean1)**2)
-        # varhat1 = np.sum(var_list1)/((df_random.shape[0]*treat_prob)**2)
-        varhat1 = np.sum(var_list1)/(n1**2)
-        # varhat1 = np.sum(var_list1)/(n1*(n1-1))
-
-        # idxs0 = list(itertools.product(df_random[df_random[args.treatment]==0].index, df_random[df_random[args.treatment]==0].index))
-        # var_list0 = np.array(list(map(partial(get_var_lm, df=df_random, weights=weights0,
-                                            #   y_mean=np.mean(df_random[df_random[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
-        # varhat0 = np.sum(var_list0)/((df_random.shape[0]*(1-treat_prob))**2)
-        # var_list0 = (weights0[df_random[df_random[args.treatment]==0].index]**2)*((df_random[df_random[args.treatment]==0]['resp'].values-y_mean0)**2)*(1-1/df_random.shape[0])
-        var_list0 = (weights0[df_random[df_random[args.treatment]==0].index]**2)*((df_random[df_random[args.treatment]==0]['resp'].values)**2)*(1-1/df_random.shape[0])
-        # var_list0 = (weights0[df_random[df_random[args.treatment]==0].index]**2)*((df_random[df_random[args.treatment]==0]['resp'].values-y_mean0)**2)
-        varhat0 = np.sum(var_list0)/(n0**2)
-        # varhat0 = np.sum(var_list1)/(n0*(n0-1))
-
-        varhat = varhat1 + varhat0
 
 elif args.method == 'clf':
 
@@ -297,16 +306,14 @@ elif args.method == 'clf':
     df_random_test.to_csv(os.path.join(args.data_dir, 'hk_rct', 'random_test.csv'), index=False)
     df_target_test.to_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_test.csv'), index=False)
 
-    # test_embeds = model.encode(df_random_test['text_full'].values, show_progress_bar=True)
-    # probs = clf.predict_proba(test_embeds)
+    df = df_random_test
+    pr_x = 1/df.shape[0]
 
     if args.marginal_probs:
         prob_list = []
         for sent_group in tqdm(df_random_test['text_full'].values):
             prob_list.append(get_prob_clf(model, clf, sent_group, args))
         probs = np.vstack(prob_list)
-        # marginal_probs = np.vstack(prob_list)
-        # probs = np.hstack([probs[:,0].reshape(-1, 1), marginal_probs[:,1].reshape(-1, 1)])
 
     else:
         if args.lm_library == 'sentence-transformers':
@@ -322,73 +329,45 @@ elif args.method == 'clf':
     corp_prob = np.array([df_random_test.shape[0]/(df_random_test.shape[0]+df_target_test.shape[0]), 
                         df_target_test.shape[0]/(df_random_test.shape[0]+df_target_test.shape[0])])
     
-    if args.estimate == 'diff':
-        pr_x = 1/df_random_test.shape[0]
-        n1 = np.sum(df_random_test[args.treatment].values)
-        n0 = np.sum(1-df_random_test[args.treatment].values)
-        weights = np.repeat(1.0, df_random_test.shape[0])
-
-        weights1 = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df_random_test[args.treatment].values
-        weight_norm1 = np.sum(weights1)/n1
-        weights1 /= weight_norm1
-        mu1 = np.sum(weights1*df_random_test['resp'].values)/n1
-
-        weights0 = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*(1-df_random_test[args.treatment].values)
-        weight_norm0 = np.sum(weights0)/n0
-        weights0 /= weight_norm0
-        mu0 = np.sum(weights0*df_random_test['resp'].values)/n0
-
-        # mu1 = np.sum(probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df_random_test['resp'].values*df_random_test[args.treatment].values)/(df_random_test.shape[0]*treat_prob)
-        # mu0 = np.sum(probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df_random_test['resp'].values*(1-df_random_test[args.treatment].values))/(df_random_test.shape[0]*(1-treat_prob))
-        est = mu1 - mu0
-
-    elif args.estimate == 'lr':
-        y_adj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df_random_test['resp'].values
-        lr = LinearRegression()
-        lr.fit(df_random_test.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1), y_adj)
-        print(df_random_test.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1).columns)
-        print(lr.coef_)
-        print(lr.intercept_)
-        quit()
-
+if args.treatment == 'all':
+    treatments = ['treatycommit', 'brave', 'evil', 'flag', 'threat', 'economy', 'treatyviolation']
+    treatment_names = ['Commitment', 'Bravery', 'Mistreatment', 'Flags', 'Threat', 'Economy', 'Violation']
+    estimates = []
+    rows = []
     if args.ci:
+        varhats = []
+    for i in range(len(treatments)):
+        treatment = treatments[i]
+        if args.ci:
+            mu1, mu0, est, varhat = get_estimate(args.estimate, args.method, treatment, args.ci)
+            estimates.append(est)
+            varhats.append(varhat)
+        else:
+            mu1, mu0, est = get_estimate(args.estimate, args.method, treatment, args.ci)
+            estimates.append(est)
+        row = [treatment_names[i], '{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]
+        if args.ci:
+            row += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
+        rows.append(row)
+    if args.ci:
+        print(tabulate(rows, headers=['mu1', 'mu0', 'est', 'ci'], tablefmt='latex'))
+    else:
+        print(tabulate(rows, headers=['mu1', 'mu0', 'est'], tablefmt='latex'))
 
-        # idxs = list(itertools.product(range(df_random_test.shape[0]), range(df_random_test.shape[0])))
-        # var_list = np.array(list(map(partial(get_var_clf, df=df_random_test), tqdm(idxs))))
-        # varhat = np.sum(var_list)/(df_random_test.shape[0]**2)
-        y_mean1 = np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)
-        y_mean0 = np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)
-        # var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values-y_mean1)**2)*(1-1/df_random_test.shape[0])
-        var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values)**2)*(1-pr_x)
-        # var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values-y_mean1)**2)
+else:
+    if args.ci:
+        mu1, mu0, est, varhat = get_estimate(args.estimate, args.method, args.treatment, args.ci)
+    else:
+        mu1, mu0, est = get_estimate(args.estimate, args.method, args.treatment, args.ci)
+    rows = [['{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]]
+    # print('mu1: {}'.format(mu1))
+    # print('mu0: {}'.format(mu0))
+    # print('Estimate: {}'.format(est))
+    if args.ci:
+        rows[0] += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
+        # print('95% CI: [{}, {}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat)))
+        # print('95% CI alt: [{}, {}]'.format(est-1.96*np.sqrt(varhat_alt), est+1.96*np.sqrt(varhat_alt)))
 
-        # idxs1 = list(itertools.product(df_random_test[df_random_test[args.treatment]==1].index, df_random_test[df_random_test[args.treatment]==1].index))
-        # var_list1 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights1, 
-        #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
-        # varhat1 = np.sum(var_list1)/((df_random_test.shape[0]*treat_prob)**2)
-        varhat1 = np.sum(var_list1)/(n1**2)
-        # varhat1 = np.sum(var_list1)/(n1*(n1-1))
-        # idxs0 = list(itertools.product(df_random_test[df_random_test[args.treatment]==0].index, df_random_test[df_random_test[args.treatment]==0].index))
-        # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
-        #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
-        # varhat0 = np.sum(var_list0)/((df_random_test.shape[0]*(1-treat_prob))**2)
-        # var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values-y_mean0)**2)*(1-1/df_random_test.shape[0])
-        var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values)**2)*(1-pr_x)
-        # var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values-y_mean0)**2)
-        varhat0 = np.sum(var_list0)/(n0**2)
-        # varhat0 = np.sum(var_list0)/(n0*(n0-1))
-
-        varhat = varhat1 + varhat0
-        # varhat_alt = (np.sum(var_list1) + np.sum(var_list0))/(df_random_test.shape[0]**2)
-
-rows = [['{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]]
-print('mu1: {}'.format(mu1))
-print('mu0: {}'.format(mu0))
-print('Estimate: {}'.format(est))
-if args.ci:
-    rows[0] += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
-    # print('95% CI: [{}, {}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat)))
-    print('95% CI: [{}, {}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat)))
-    # print('95% CI alt: [{}, {}]'.format(est-1.96*np.sqrt(varhat_alt), est+1.96*np.sqrt(varhat_alt)))
-
-print(tabulate(rows, headers=['mu1', 'mu0', 'est', 'ci'], tablefmt='latex'))
+        print(tabulate(rows, headers=['mu1', 'mu0', 'est', 'ci'], tablefmt='latex'))
+    else:
+        print(tabulate(rows, headers=['mu1', 'mu0', 'est'], tablefmt='latex'))
