@@ -110,7 +110,7 @@ Finally, letting $\mathcal{X}$ be the space of all texts, the variance of the es
     \text{Var}[\hat{\mu}(P)] &= \text{Var}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
     &= \text{Cov}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{1}{n} \sum_{j=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
-    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}_X\left[\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}, \sum_{x' \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}\right] \\
+    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}, \sum_{x' \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}\right] \\
     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x), \int_{x'}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_j(x')\mathbbm{1}\{X_j=x'\}d\mathbb{P}^R(x')\right] \\
     &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n \int_x \int_{x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
     &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
@@ -120,9 +120,13 @@ Finally, letting $\mathcal{X}$ be the space of all texts, the variance of the es
 
 where the last equality follows from
 \begin{align*}
-    \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}] &=
-    \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}Y_j(x')\mathbbm\{X_j=x'\}] - \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}]\mathbb{E}[Y_j(x')\mathbbm{1}\{X_j=x'\}] \\
-    &= \mathbb{E}[Y_i(x)Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}] \\&\qquad - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}]\mathbb{E}[\mathbbm{1}\{X_j=x'\}] \\
+    &\text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}] \\
+    % &=
+    % \mathbb{E}[(Y_i(x)\mathbbm{1}\{X_i=x\} - \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}])(Y_j(x')\mathbbm{1}\{X_j=x'\} - \mathbb{E}[Y_j(x')\mathbbm{1}\{X_j=x'\}])] \\
+    % &= \mathbb{E}[(Y_i(x)\mathbbm{1}\{X_i=x\} - \mathbb{E}[Y_i(x)]\mathbb{E}[\mathbbm{1}\{X_i=x\}])(Y_j(x')\mathbbm{1}\{X_j=x'\} - \mathbb{E}[Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_j=x'\}])] \\
+    % &= \mathbb{E}[(Y_i(x)\mathbbm{1}\{X_i=x\} - \mathbb{E}[Y_i(x)]P^R(x))(Y_j(x')\mathbbm{1}\{X_j=x'\} - \mathbb{E}[Y_j(x')]P^R(x'))] \\
+    &= \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}Y_j(x')\mathbbm{1}\{X_j=x'\}] - \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}]\mathbb{E}[Y_j(x')\mathbbm{1}\{X_j=x'\}] \\
+    &= \mathbb{E}[Y_i(x)Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}]  - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}]\mathbb{E}[\mathbbm{1}\{X_j=x'\}] \\
     &=\mathbb{E}[Y_i(x)Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')
 \end{align*}
 
@@ -167,7 +171,7 @@ Consequently, we have
     \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i \in [n]} \left(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\right)^2 (Y_i(X_i))^2 (1-P^R(X_i))
 \end{equation*}
 
-% $$\widehat{\text{Var}}[\hat{\mu}(P)] =\frac{1}{|D_1|(|D_1|-1)} \sum_{i \in D_1} \gamma_i^2(Y_i-\overline{Y}_{D_1}) + \frac{1}{|D_0|(|D_0|-1)} \sum_{j \in D_0} \gamma_j^2(Y_j-\overline{Y}_{D_0})^2$$
+% $$\widehat{\text{Var}}[\hat{\mu}(P)] =\frac{1}{|D_1|(|D_1|-1)} \sum_{i \in D_1} \gamma_i^2(Y_i-\overline{Y}_{D_1})^2 + \frac{1}{|D_0|(|D_0|-1)} \sum_{j \in D_0} \gamma_j^2(Y_j-\overline{Y}_{D_0})^2$$
 
 % \vl{QUESTION: Do we compute variance estimates separately for $\hat{\mu}(P_1)$ and $\hat{\mu}(P_1)$, then compute $$\widehat{\text{Var}}(\hat{\tau})=\frac{\widehat{\text{Var}}[\hat{\mu}(P_1)]}{n^2P(g(X)=1)^2} + \frac{\widehat{\text{Var}}[\hat{\mu}(P_0)]}{n^2P(g(X)=0)^2}$$ Or do we use this variance estimate over the whole sample to directly get $\widehat{\text{Var}}(\hat{\tau})$?
 % ANSWER: In the finite-sample setting, adding the variance estimates is fine. In the non-finite-sample setting, the variance estimation is more involved.}
@@ -263,12 +267,20 @@ We estimate the overall quantity of interest $\hat{\tau}$ through the following 
         \hat{\tau} = \frac{1}{|D_1|} \sum_{j \in D_1} \hat{\gamma}_j Y_j - \frac{1}{|D_0|} \sum_{k \in D_0} \hat{\gamma}_k Y_k
     \end{equation*}
     
+    % \begin{equation*}
+    %     \widehat{\text{Var}}[\hat{\mu}(P_1)] = \frac{1}{|D_1|^2} \sum_{i,j \in D_1} \hat{\gamma}_i \hat{\gamma}_j (Y_i-\bar{Y}_{D_1})(Y_j-\bar{Y}_{D_1}) \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
+    % \end{equation*}
+
     \begin{equation*}
-        \widehat{\text{Var}}[\hat{\mu}(P_1)] = \frac{1}{|D_1|^2} \sum_{i,j \in D_1} \hat{\gamma}_i \hat{\gamma}_j (Y_i-\bar{Y}_{D_1})(Y_j-\bar{Y}_{D_1}) \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
+        \widehat{\text{Var}}[\hat{\mu}(P_1)] = \frac{1}{|D_1|^2} \sum_{i,j \in D_1} \hat{\gamma}_i \hat{\gamma}_j Y_iY_j \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
     \end{equation*}
     
+    % \begin{equation*}
+    %     \widehat{\text{Var}}[\hat{\mu}(P_0)] = \frac{1}{|D_0|^2} \sum_{i,j \in D_0} \hat{\gamma}_i \hat{\gamma}_j (Y_i-\bar{Y}_{D_0})(Y_j-\bar{Y}_{D_0}) \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
+    % \end{equation*}
+
     \begin{equation*}
-        \widehat{\text{Var}}[\hat{\mu}(P_0)] = \frac{1}{|D_0|^2} \sum_{i,j \in D_0} \hat{\gamma}_i \hat{\gamma}_j (Y_i-\bar{Y}_{D_0})(Y_j-\bar{Y}_{D_0}) \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
+        \widehat{\text{Var}}[\hat{\mu}(P_0)] = \frac{1}{|D_0|^2} \sum_{i,j \in D_0} \hat{\gamma}_i \hat{\gamma}_j Y_iY_j \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
     \end{equation*}
 
     \vl{Not totally sure about this, but I thought we would have to subtract out the mean $Y$ so that the variance doesn't blow up with large $Y$?}
