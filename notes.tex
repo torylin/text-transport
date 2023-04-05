@@ -177,6 +177,7 @@ Consequently, we have
 % ANSWER: In the finite-sample setting, adding the variance estimates is fine. In the non-finite-sample setting, the variance estimation is more involved.}
 
 \section{Empirical estimation}
+
 \subsection{Estimating $\hat{P}^T$ from the data}
 
 \vl{QUESTION: Should we ever use the full randomization corpus (i.e., all possible 2- or 3-attribute permutations of candidate sentences from the HK study) as $P^R$, or do we always consider $P^R$ to be the sample (i.e., the data for which we have measured outcomes)? This is relevant because the distributions are not the same---the reason being that there are different numbers of candidate sentences for each text attribute, so a full set of permutations is not uniform over the confounding attributes. 
@@ -300,6 +301,14 @@ We estimate the overall quantity of interest $\hat{\tau}$ through the following 
 \end{enumerate}
 
 % \vl{Is there any reason Fong \& Grimmer used linear regression to estimate the effects instead of difference-in-means? I also implemented the option of LR on weight-adjusted $Y_i$s, but I've left the results out of the document (they do look different though).}
+
+\subsection{``Natural'' vs. ``isolated'' effects}
+
+We define a \textit{natural} effect to refer to the effect of a text attribute $g(X)$ \textit{as it typically co-occurs with other text attributes}. For instance, if we are interested in the text attribute \textit{positive emotion}, we know that a text that contains positive emotion may frequently also contain attributes like \textit{optimism} or \textit{friendliness}. Then the natural effect of \textit{positive emotion} is the collective effect of positive emotion \textit{and} its typical co-ocurring traits like optimism and friendliness.
+
+An \textit{isolated} effect, on the other hand, is the effect of the text attribute $g(X)$ \textit{separate from all other text attributes}. Again taking positive emotion as $g(X)$, the isolated effect of $g(X)$ would be the effect of positive emotion only, if it could be separated from its co-occurring attributes. While it is difficult to think of the isolated effect in interpretable terms---what does it mean for a text attribute to exist in isolation?---it is something that can be computed. Randomized experiments with text, for example, can tell us the isolated effect of $g(X)$.
+
+In general, for the isolated effect of $g(X)$ to be computed from a text distribution $P$, the distribution must be uniform over all other text attributes $h(X)$. This means that it is possible to obtain an isolated effect from our target distribution $P^T$ as well---but $P^T$ must be sampled in a specific way, such that uniformity is enforced over all $h(X)$. If $P^T$ is sampled in a ``natural'' way, then the effect we obtain is instead the natural effect. In our current experiments, we report natural effects.
 
 \section{Experiments}
 
