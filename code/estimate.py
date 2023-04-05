@@ -145,32 +145,17 @@ def get_estimate(estimate, method, treatment, ci):
 
         y_mean1 = np.mean(df[df[treatment]==1]['resp'].values)
         y_mean0 = np.mean(df[df[treatment]==0]['resp'].values)
-        # var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values-y_mean1)**2)*(1-pr_x)
-        # var_weights1 = (weights1_noadj[df_random_test[df_random_test[args.treatment]==1].index]**2)*(1-pr_x)
-        # var_list1 = var_weights1/(np.sum(var_weights1)/n1)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values)**2)
-        var_list1 = (weights1[df[df[treatment]==1].index]**2)*((df[df[treatment]==1]['resp'].values)**2)*(1-pr_x)
-        # var_list1 = (weights1[df_random_test[df_random_test[args.treatment]==1].index]**2)*((df_random_test[df_random_test[args.treatment]==1]['resp'].values)**2)*pr_x*(1-pr_x)
-        # var_list1 = (weights1[df[df[treatment]==1].index]**2)*((df[df[treatment]==1]['resp'].values-y_mean1)**2)
-
+        var_list1 = ((weights1*df['resp'].values)[df[treatment]==1]-mu1)**2
         # idxs1 = list(itertools.product(df_random_test[df_random_test[args.treatment]==1].index, df_random_test[df_random_test[args.treatment]==1].index))
         # var_list1 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights1, 
         #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
         varhat1 = np.sum(var_list1)/(n1**2)
-        # varhat1 = np.sum(var_list1)/(n1*(n1-1))
         # idxs0 = list(itertools.product(df_random_test[df_random_test[args.treatment]==0].index, df_random_test[df_random_test[args.treatment]==0].index))
         # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
         #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
-        # var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values-y_mean0)**2)*(1-pr_x)
-        # var_weights0 = (weights0_noadj[df_random_test[df_random_test[args.treatment]==0].index]**2)*(1-pr_x)
-        # var_list0 = var_weights0/(np.sum(var_weights0)/n0)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values)**2)
-        var_list0 = (weights0[df[df[treatment]==0].index]**2)*((df[df[treatment]==0]['resp'].values)**2)*(1-pr_x)
-        # var_list0 = (weights0[df_random_test[df_random_test[args.treatment]==0].index]**2)*((df_random_test[df_random_test[args.treatment]==0]['resp'].values)**2)*pr_x*(1-pr_x)
-        # var_list0 = (weights0[df[df[treatment]==0].index]**2)*((df[df[treatment]==0]['resp'].values-y_mean0)**2)
+        var_list0 = ((weights0*df['resp'].values)[df[treatment]==0]-mu0)**2
         varhat0 = np.sum(var_list0)/(n0**2)
-        # varhat0 = np.sum(var_list0)/(n0*(n0-1))
-
         varhat = varhat1 + varhat0
-        # varhat_alt = (np.sum(var_list1) + np.sum(var_list0))/(df_random_test.shape[0]**2)
 
         return (mu1, mu0, est, varhat)
     
@@ -218,6 +203,7 @@ df_random['text_full'] = df_random.text1.fillna('') + ' ' + df_random.text2.fill
 if args.method == 'mlm' or args.method == 'clm':
 
     df = df_random
+    pr_x = 1/df.shape[0]
     
     if args.method == 'mlm':
         get_prob_lm = get_prob_mlm
