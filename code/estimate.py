@@ -25,6 +25,31 @@ from utils import get_embeds
 
 logging.set_verbosity_error()
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/data/hk/')
+    parser.add_argument('--random-csv', type=str, default='HKRepData_textfull.csv')
+    parser.add_argument('--target-csv', type=str, default='target_corpus_fullprobs.csv')
+    parser.add_argument('--method', type=str, default='clf')
+    parser.add_argument('--representation', type=str, default='embedding')
+    parser.add_argument('--seed', type=int, default=230224)
+    parser.add_argument('--treatment', type=str, nargs='+', default='treatycommit')
+    parser.add_argument('--outcome', type=str, default='resp')
+    parser.add_argument('--text-col', type=str, default='text_full')
+    parser.add_argument('--clf', type=str, default='logistic')
+    parser.add_argument('--estimate', type=str, default='diff')
+    parser.add_argument('--lm-name', type=str, default='bert-base-uncased')
+    parser.add_argument('--lm-library', type=str, default='transformers')
+    parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--marginal-probs', action='store_true')
+    parser.add_argument('--ci', action='store_true')
+    parser.add_argument('--scale', action='store_true')
+    parser.add_argument('--output-estimate', action='store_true')
+    parser.add_argument('--save-csvs', action='store_true')
+    args = parser.parse_args()
+
+    return args
+
 def get_prob_clf(model, clf, sent_group, args):
     sents = tokenize.sent_tokenize(sent_group)
     if args.lm_library == 'sentence-transformers':
@@ -75,30 +100,30 @@ def get_prob_clm(dataloader):
     
     return all_probs
 
-def get_var_clf(idx, df, weights, y_mean):
+def get_var_clf(idx, df, weights, y_mean, args):
     i = idx[0]
     j = idx[1]
     d_xi = weights[i]
     d_xj = weights[j]
-    # yi = df['resp'].values[i] - y_mean
-    # yj = df['resp'].values[j] - y_mean
-    yi = df['resp'].values[i]
-    yj = df['resp'].values[j]
+    # yi = df[args.outcome].values[i] - y_mean
+    # yj = df[args.outcome].values[j] - y_mean
+    yi = df[args.outcome].values[i]
+    yj = df[args.outcome].values[j]
     if i != j:
         return 0
     val = d_xi*d_xj*yi*yj*(1-1/df.shape[0])
 
     return val
 
-def get_var_lm(idx, df, weights, y_mean):
+def get_var_lm(idx, df, weights, y_mean, args):
     i = idx[0]
     j = idx[1]
     p_xi = weights[i]
     p_xj = weights[j]
-    # yi = df['resp'].values[i] - y_mean
-    # yj = df['resp'].values[j] - y_mean
-    yi = df['resp'].values[i]
-    yj = df['resp'].values[j]
+    # yi = df[args.outcome].values[i] - y_mean
+    # yj = df[args.outcome].values[j] - y_mean
+    yi = df[args.outcome].values[i]
+    yj = df[args.outcome].values[j]
     if i != j:
         return 0
     val = p_xi*p_xj*yi*yj*(1-1/df.shape[0])
@@ -118,24 +143,24 @@ def get_estimate(estimate, method, treatment, ci):
         
         weight_norm1 = np.sum(weights1_noadj)/n1
         weights1 = weights1_noadj/weight_norm1
-        mu1 = np.sum(weights1*df['resp'].values)/n1
+        mu1 = np.sum(weights1*df[args.outcome].values)/n1
 
         weight_norm0 = np.sum(weights0_noadj)/n0
         weights0 = weights0_noadj/weight_norm0
-        mu0 = np.sum(weights0*df['resp'].values)/n0
+        mu0 = np.sum(weights0*df[args.outcome].values)/n0
 
         est = mu1 - mu0
 
     elif estimate == 'lr':
         if method == 'clm' or method == 'mlm':
-            y_adj = df['resp']*all_probs/(pr_x*norm_sum)
+            y_adj = df[args.outcome]*all_probs/(pr_x*norm_sum)
         elif method == 'clf':
-            y_adj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df['resp'].values
+            y_adj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df[args.outcome].values
         
         # weights = weights1
         # weights[df[args.treatment] == 0] = weights0[df[args.treatment] == 0]
         ols = OLS(y_adj, df.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1))
-        # ols = WLS(df['resp'].values, df.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1),
+        # ols = WLS(df[args.outcome].values, df.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1),
                 #   weights=weights**2)
         ols_result = ols.fit()
         print(ols_result.summary())
@@ -143,9 +168,9 @@ def get_estimate(estimate, method, treatment, ci):
 
     if ci:
 
-        y_mean1 = np.mean(df[df[treatment]==1]['resp'].values)
-        y_mean0 = np.mean(df[df[treatment]==0]['resp'].values)
-        var_list1 = ((weights1*df['resp'].values)[df[treatment]==1]-mu1)**2
+        y_mean1 = np.mean(df[df[treatment]==1][args.outcome].values)
+        y_mean0 = np.mean(df[df[treatment]==0][args.outcome].values)
+        var_list1 = ((weights1*df[args.outcome].values)[df[treatment]==1]-mu1)**2
         # idxs1 = list(itertools.product(df_random_test[df_random_test[args.treatment]==1].index, df_random_test[df_random_test[args.treatment]==1].index))
         # var_list1 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights1, 
         #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
@@ -153,33 +178,13 @@ def get_estimate(estimate, method, treatment, ci):
         # idxs0 = list(itertools.product(df_random_test[df_random_test[args.treatment]==0].index, df_random_test[df_random_test[args.treatment]==0].index))
         # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
         #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
-        var_list0 = ((weights0*df['resp'].values)[df[treatment]==0]-mu0)**2
+        var_list0 = ((weights0*df[args.outcome].values)[df[treatment]==0]-mu0)**2
         varhat0 = np.sum(var_list0)/(n0**2)
         varhat = varhat1 + varhat0
 
         return (mu1, mu0, est, varhat)
     
     return (mu1, mu0, est)
-
-
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/data/')
-    parser.add_argument('--method', type=str, default='clf')
-    parser.add_argument('--representation', type=str, default='embedding')
-    parser.add_argument('--seed', type=int, default=230224)
-    parser.add_argument('--treatment', type=str, default='treatycommit')
-    parser.add_argument('--clf', type=str, default='logistic')
-    parser.add_argument('--estimate', type=str, default='diff')
-    parser.add_argument('--lm-name', type=str, default='bert-base-uncased')
-    parser.add_argument('--lm-library', type=str, default='transformers')
-    parser.add_argument('--batch-size', type=int, default=8)
-    parser.add_argument('--marginal-probs', action='store_true')
-    parser.add_argument('--ci', action='store_true')
-    parser.add_argument('--scale', action='store_true')
-    args = parser.parse_args()
-
-    return args
 
 gc.collect()
 torch.cuda.empty_cache()
@@ -190,9 +195,8 @@ print(device)
 args = get_args()
 
 # df_random = pd.read_csv(os.path.join(args.data_dir, 'hk_rct', 'HKData.csv'))
-df_random = pd.read_csv(os.path.join(args.data_dir, 'hk_rct', 'HKRepData.csv'))
-df_target = pd.read_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_corpus_fullprobs.csv'))
-df_random['text_full'] = df_random.text1.fillna('') + ' ' + df_random.text2.fillna('') + ' ' + df_random.text3.fillna('')
+df_random = pd.read_csv(os.path.join(args.data_dir, args.random_csv))
+df_target = pd.read_csv(os.path.join(args.data_dir, args.target_csv))
 
 # df_random_corp = pd.read_pickle(os.path.join(args.data_dir, 'hk_rct', 'randomization_corpus_random_sample.pkl'))
 # if args.treatment == 'treatycommit':
@@ -239,7 +243,7 @@ if args.method == 'mlm' or args.method == 'clm':
         all_probs = all_probs1*all_probs2*all_probs3
 
     else:
-        tokens = tokenizer(df_random['text_full'].astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
+        tokens = tokenizer(df_random[args.text_col].astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
         ds = Dataset.from_dict(tokens).with_format('torch')
         dataloader = DataLoader(ds, batch_size=args.batch_size, shuffle=False)
 
@@ -249,7 +253,7 @@ if args.method == 'mlm' or args.method == 'clm':
 
 elif args.method == 'clf':
 
-    sentences = np.hstack([df_random['text_full'].values, df_target['text_full'].values])
+    sentences = np.hstack([df_random[args.text_col].values, df_target[args.text_col].values])
     labels = np.array([0]*df_random.shape[0] + [1]*df_target.shape[0])
     sentences, labels = shuffle(sentences, labels, random_state=args.seed)
 
@@ -280,32 +284,33 @@ elif args.method == 'clf':
     else:
         clf.fit(X_train, y_train)
 
-    train_df = pd.DataFrame({'text_full': sentence_train})
-    test_df = pd.DataFrame({'text_full': sentence_test})
-    df_random_test = pd.merge(df_random, test_df, on=['text_full'], how='inner').drop_duplicates(subset=['text_full']).reset_index(drop=True)
-    df_target_test = pd.merge(df_target, test_df, on=['text_full'], how='inner').drop_duplicates(subset=['text_full']).reset_index(drop=True)
-    df_random_train = pd.merge(df_random, train_df, on=['text_full'], how='inner').drop_duplicates(subset=['text_full']).reset_index(drop=True)
-    df_target_train = pd.merge(df_target, train_df, on=['text_full'], how='inner').drop_duplicates(subset=['text_full']).reset_index(drop=True)
+    train_df = pd.DataFrame({args.text_col: sentence_train})
+    test_df = pd.DataFrame({args.text_col: sentence_test})
+    df_random_test = pd.merge(df_random, test_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
+    df_target_test = pd.merge(df_target, test_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
+    df_random_train = pd.merge(df_random, train_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
+    df_target_train = pd.merge(df_target, train_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
 
-    df_random_train.to_csv(os.path.join(args.data_dir, 'hk_rct', 'random_train.csv'), index=False)
-    df_target_train.to_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_train.csv'), index=False)
-    df_random_test.to_csv(os.path.join(args.data_dir, 'hk_rct', 'random_test.csv'), index=False)
-    df_target_test.to_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_test.csv'), index=False)
+    if args.save_csvs:
+        df_random_train.to_csv(os.path.join(args.data_dir, 'random_train.csv'), index=False)
+        df_target_train.to_csv(os.path.join(args.data_dir, 'target_train.csv'), index=False)
+        df_random_test.to_csv(os.path.join(args.data_dir, 'random_test.csv'), index=False)
+        df_target_test.to_csv(os.path.join(args.data_dir, 'target_test.csv'), index=False)
 
     df = df_random_test
     pr_x = 1/df.shape[0]
 
     if args.marginal_probs:
         prob_list = []
-        for sent_group in tqdm(df_random_test['text_full'].values):
+        for sent_group in tqdm(df_random_test[args.text_col].values):
             prob_list.append(get_prob_clf(model, clf, sent_group, args))
         probs = np.vstack(prob_list)
 
     else:
         if args.lm_library == 'sentence-transformers':
-            test_embeds = model.encode(df_random_test['text_full'].values, show_progress_bar=True)
+            test_embeds = model.encode(df_random_test[args.text_col].values, show_progress_bar=True)
         elif args.lm_library == 'transformers':
-            test_embeds = get_embeds(df_random_test['text_full'].values.astype(str).tolist(), tokenizer, model, device)
+            test_embeds = get_embeds(df_random_test[args.text_col].values.astype(str).tolist(), tokenizer, model, device)
 
         if args.scale:
             probs = clf.predict_proba(scaler.transform(test_embeds))
@@ -314,16 +319,44 @@ elif args.method == 'clf':
 
     corp_prob = np.array([df_random_test.shape[0]/(df_random_test.shape[0]+df_target_test.shape[0]), 
                         df_target_test.shape[0]/(df_random_test.shape[0]+df_target_test.shape[0])])
-    
-if args.treatment == 'all':
-    treatments = ['treatycommit', 'brave', 'evil', 'flag', 'threat', 'economy', 'treatyviolation']
-    treatment_names = ['Commitment', 'Bravery', 'Mistreatment', 'Flags', 'Threat', 'Economy', 'Violation']
+
+headers = []
+if args.output_estimate:
+    headers = ['mu1', 'mu0', 'est']
+else:
+    headers = ['est']
+if args.ci:
+    headers += ['ci']
+headers += ['est_orig']
+
+if len(args.treatment) == 1 and args.treatment != 'all':
+    est_orig = np.mean(df[df[args.treatment] == 1][args.outcome].values) - np.mean(df[df[args.treatment] == 0][args.outcome].values)
+    if args.ci:
+        mu1, mu0, est, varhat = get_estimate(args.estimate, args.method, args.treatment, args.ci)
+    else:
+        mu1, mu0, est = get_estimate(args.estimate, args.method, args.treatment, args.ci)
+    if args.output_estimate:
+        rows = [['{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]]
+    else: 
+        rows = [['{:.3f}'.format(est)]]
+    if args.ci:
+        rows[0] += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
+    rows[0] += ['{:.3f}'.format(est_orig)]
+
+else:
+    if args.treatment == 'all':
+        treatments = ['treatycommit', 'brave', 'evil', 'flag', 'threat', 'economy', 'treatyviolation']
+        treatment_names = ['Commitment', 'Bravery', 'Mistreatment', 'Flags', 'Threat', 'Economy', 'Violation']
+    else:
+        treatments = args.treatment
+        treatment_names = args.treatment
     estimates = []
     rows = []
     if args.ci:
         varhats = []
     for i in range(len(treatments)):
         treatment = treatments[i]
+        est_orig = np.mean(df[df[treatment] == 1][args.outcome].values) - np.mean(df[df[treatment] == 0][args.outcome].values)
         if args.ci:
             mu1, mu0, est, varhat = get_estimate(args.estimate, args.method, treatment, args.ci)
             estimates.append(est)
@@ -331,29 +364,13 @@ if args.treatment == 'all':
         else:
             mu1, mu0, est = get_estimate(args.estimate, args.method, treatment, args.ci)
             estimates.append(est)
-        row = [treatment_names[i], '{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]
+        if args.output_estimate:
+            row = [treatment_names[i], '{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]
+        else:
+            row = [treatment_names[i], '{:.3f}'.format(est)]
         if args.ci:
             row += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
+        row += ['{:.3f}'.format(est_orig)]
         rows.append(row)
-    if args.ci:
-        print(tabulate(rows, headers=['mu1', 'mu0', 'est', 'ci'], tablefmt='latex'))
-    else:
-        print(tabulate(rows, headers=['mu1', 'mu0', 'est'], tablefmt='latex'))
 
-else:
-    if args.ci:
-        mu1, mu0, est, varhat = get_estimate(args.estimate, args.method, args.treatment, args.ci)
-    else:
-        mu1, mu0, est = get_estimate(args.estimate, args.method, args.treatment, args.ci)
-    rows = [['{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]]
-    # print('mu1: {}'.format(mu1))
-    # print('mu0: {}'.format(mu0))
-    # print('Estimate: {}'.format(est))
-    if args.ci:
-        rows[0] += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
-        # print('95% CI: [{}, {}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat)))
-        # print('95% CI alt: [{}, {}]'.format(est-1.96*np.sqrt(varhat_alt), est+1.96*np.sqrt(varhat_alt)))
-
-        print(tabulate(rows, headers=['mu1', 'mu0', 'est', 'ci'], tablefmt='latex'))
-    else:
-        print(tabulate(rows, headers=['mu1', 'mu0', 'est'], tablefmt='latex'))
+print(tabulate(rows, headers=headers, tablefmt='latex'))

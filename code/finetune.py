@@ -8,17 +8,19 @@ from datasets import Dataset
 from transformers import AutoTokenizer, DataCollatorForLanguageModeling, TrainingArguments, Trainer, AutoModelForMaskedLM, AutoModelForCausalLM
 from sklearn.model_selection import train_test_split
 
-def preprocess(df, tokenizer):
-    return tokenizer(df['text_full'], truncation=True, padding="max_length")
+def preprocess(df, tokenizer, args):
+    return tokenizer(df[args.text_col], truncation=True, padding="max_length")
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/data/')
+    parser.add_argument('--data-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/data/hk/')
+    parser.add_argument('--csv', type=str, default='target_train.csv')
+    parser.add_argument('--text-col', type=str, default='text_full')
     parser.add_argument('--lm-type', type=str, default='mlm')
     parser.add_argument('--model', type=str, default='bert-base-uncased')
     parser.add_argument('--seed', type=int, default=230301)
     parser.add_argument('--mlm-prob', type=float, default=0.15)
-    parser.add_argument('--output-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/models/')
+    parser.add_argument('--output-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/models/hk/')
     parser.add_argument('--lr', type=float, default=2e-5)
     parser.add_argument('--num-epochs', type=int, default=3)
     parser.add_argument('--decay', type=float, default=1e-2)
@@ -37,7 +39,7 @@ print(device)
 
 args = get_args()
 
-df_target = pd.read_csv(os.path.join(args.data_dir, 'hk_speeches', 'target_train.csv'))
+df_target = pd.read_csv(os.path.join(args.data_dir, args.csv))
 
 if args.lm_type == 'mlm':
     model = AutoModelForMaskedLM.from_pretrained(args.model)
@@ -58,10 +60,10 @@ df_target_train, df_target_val = train_test_split(df_target, test_size=0.33)
 train_dat = Dataset.from_pandas(df_target_train)
 val_dat = Dataset.from_pandas(df_target_val)
 
-train_dat = train_dat.map(preprocess, fn_kwargs={'tokenizer': tokenizer}, batched=True)
-train_dat = train_dat.remove_columns(['text_full', '__index_level_0__'])
-val_dat = val_dat.map(preprocess, fn_kwargs={'tokenizer': tokenizer}, batched=True)
-val_dat = val_dat.remove_columns(['text_full', '__index_level_0__'])
+train_dat = train_dat.map(preprocess, fn_kwargs={'tokenizer': tokenizer, 'args': args}, batched=True)
+train_dat = train_dat.remove_columns([args.text_col, '__index_level_0__'])
+val_dat = val_dat.map(preprocess, fn_kwargs={'tokenizer': tokenizer, 'args': args}, batched=True)
+val_dat = val_dat.remove_columns([args.text_col, '__index_level_0__'])
 
 training_args = TrainingArguments(
     output_dir=os.path.join(args.output_dir, args.model),
