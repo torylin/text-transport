@@ -314,7 +314,7 @@ In general, for the isolated effect of $g(X)$ to be computed from a text distrib
 
 \subsection{Data}
 
-\subsubsection{Randomization corpus}
+\subsubsection{Randomization corpus: Hong Kong protests experimental study}
 
 Our randomization corpus $P^R$ is taken from \cite{fong2021causal}, where texts are randomly constructed over several binary attributes and assigned to readers. For each text, 2-3 attributes are chosen out of a pool of 7. In this data, the measured variables comprise the following:
 \begin{itemize}
@@ -348,13 +348,19 @@ Our randomization corpus $P^R$ is taken from \cite{fong2021causal}, where texts 
     \label{tab:results_baseline}
 \end{table}
 
-\subsubsection{Target corpus}
+\subsubsection{Target corpus: U.S. Congressional speeches on Hong Kong protests}
 
 Our target corpus $P^T$ is derived from the U.S. Congressional speeches on the Hong Kong protests, which \cite{fong2021causal} used as the basis for their constructed texts. This corpus comprises 20 speeches delivered during Congressional meetings between June and November 2019. We split each speech into passages of 2-7 sentences, following the sentence probabilities of the randomization corpus. We consider these passages to be the natural language analogs of the constructed texts in \cite{fong2021causal}.
 
+\subsubsection{Amazon music reviews}
+
+This dataset from \cite{przyant2021causal} contains Amazon reviews of music purchases, with a synthetic label that is a function of (1) the rating of the review and (2) the media format of the music (CD or digital). This dataset can be considered ``randomized,'' which makes it suitable for use as $P^R$; however, by splitting the dataset according to media format, we can also treat one split as $P^R$ and the other as $P^T$. Then, since both splits are randomized, an effect transported from $P^R$ to $P^T$ can be validated against an effect estimated directly from $P^T$. We parametrize the text to obtain interpretable $g(X), h(X)$ using the LIWC and Empath lexicons
+
 \subsection{Results}
 
-\subsubsection{Classification approach}
+\vl{All HK CIs need to be updated}
+
+\subsubsection{Hong Kong: Classification approach}
 
 We report our treatment effect estimates using the classification approach described in Section \ref{sec:classification}. For each treatment (i.e., text attribute), we estimate its effect on the \textit{response}. In Table \ref{tab:results_clf_mpnet}, the classifier is a logistic regression model, and the language representations are embeddings from the pre-trained sentence transformer MPNet \cite{song2020mpnet}. HuggingFace's sentence transformers are designed to be particularly suitable for generating sentence embeddings for a variety of tasks. In Table \ref{tab:results_clf_mpnet_marginal}, the classifier and language representations remain the same, but text probabilities are computed as a marginal product of the individual sentence probabilities. Variance is computed as a sum of $\widehat{\text{Var}}[\hat{\mu}(P_1)]$ and $\widehat{\text{Var}}[\hat{\mu}(P_0)]$.
 
@@ -402,7 +408,7 @@ We report our treatment effect estimates using the classification approach descr
 % \newline \newline
 % Also, I'm not too sure about the variance computation. It seems like the way we define the variance estimate will produce almost the same CI (in terms of width) for every treatment. The CIs also seem much narrower than I would expect?}
 
-\subsubsection{Language modeling approach}
+\subsubsection{Hong Kong: Language modeling approach}
 
 \vl{Probably the biggest issue we have is the lack of data---it turns out that the natural text of the HK speeches is not a very large corpus. While the classifier doesn't require much training data because the task is fairly easy, it's unclear if properly fine-tuning an LLM requires more.
 \newline
@@ -467,6 +473,74 @@ We report our treatment effect estimates using the language modeling approach de
     \end{tabular}
     \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Text probabilities are computed from marginal sentence probabilities.}
     \label{tab:results_clm_gpt2_marginal}
+\end{table}
+
+\subsubsection{Amazon: Classification approach}
+
+Tables \ref{tab:results_clf_mpnet_amazon1} and \ref{tab:results_clf_mpnet_amazon2}. According to the direct effect estimates, positive emotion has a larger positive effect on the outcome for CD reviews than for digital music reviews, and negative emotion has a larger negative effect on the outcome for CD reviews than for digital music reviews. Conversely, anxiety has a smaller negative effect on the outcome for CD reviews than for digital music reviews. Our transferred effect estimates reflect these trends for negative emotion and anxiety but not for positive emotion.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|ccccc}
+    \toprule
+    Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$ & 95\% CI & $\hat{\tau}_T$ \\
+    \midrule
+    Positive emotion & 0.631 & 0.632 & -0.001 & [-0.095, 0.093] &      0.066 \\
+    Negative emotion & 0.616 & 0.639 & -0.023 & [-0.080, 0.034] &     -0.045 \\
+    Anxiety    & 0.629 & 0.631 & -0.003 & [-0.120, 0.114] &     -0.036 \\
+    \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
+    \label{tab:results_clf_mpnet_amazon1}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|ccccc}
+    \toprule
+    Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$ & 95\% CI & $\hat{\tau}_T$ \\
+    \midrule
+    Positive emotion & 0.469 & 0.416 &  0.053 & [0.013, 0.093]   &      0.038 \\
+    Negative emotion & 0.437 & 0.477 & -0.04  & [-0.066, -0.014] &     -0.026 \\
+    Anxiety    & 0.432 & 0.465 & -0.033 & [-0.079, 0.013]  &     -0.052 \\
+    \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for CD purchases, while $P^T$ is the distribution of Amazon reviews for digital music purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
+    \label{tab:results_clf_mpnet_amazon2}
+\end{table}
+
+\subsubsection{Amazon: Language modeling approach}
+
+Tables \ref{tab:results_clm_gpt2_finetuned_amazon1} and \ref{tab:results_clm_gpt2_finetuned_amazon2}. Our transferred effect estimates reflect the direct effect trends for anxiety only. \vl{Need to check why the direct effect estimates aren't exactly the same as in the classification approach---they should be identical?}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|ccccc}
+    \toprule
+    Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$ & 95\% CI & $\hat{\tau}_T$ \\
+    \midrule
+    Positive emotion & 0.641 & 0.598 &  0.044 & [-0.006, 0.093] & 0.063 \\
+    Negative emotion & 0.625 & 0.643 & -0.018 & [-0.052, 0.016] & -0.045 \\
+    Anxiety  & 0.593 & 0.64  & -0.047 & [-0.111, 0.017] & -0.047 \\
+    \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
+    \label{tab:results_clm_gpt2_finetuned_amazon1}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|ccccc}
+    \toprule
+    Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$ & 95\% CI & $\hat{\tau}_T$ \\
+    \midrule
+    Positive emotion & 0.459 & 0.398 &  0.062 & [0.028, 0.095]   &  0.035   \\
+    Negative emotion & 0.42  & 0.472 & -0.051 & [-0.076, -0.027] & -0.028 \\
+    Anxiety    & 0.382 & 0.457 & -0.075 & [-0.116, -0.033] &  -0.054 \\
+    \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$. Here, $P^R$ is the distribution of Amazon reviews for CD purchases, while $P^T$ is the distribution of Amazon reviews for digital music purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
+    \label{tab:results_clm_gpt2_finetuned_amazon2}
 \end{table}
 
 \subsection{Discussion}
