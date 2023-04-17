@@ -10,7 +10,7 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModelForMaskedLM, AutoModelForCausalLM, AutoModel, pipeline
 from datasets import Dataset
 from torch.utils.data import DataLoader
-from sklearn.linear_model import LogisticRegressionCV, LinearRegression
+from sklearn.linear_model import LogisticRegressionCV, LinearRegression, ElasticNet
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -33,19 +33,23 @@ def get_args():
     parser.add_argument('--method', type=str, default='clf')
     parser.add_argument('--representation', type=str, default='embedding')
     parser.add_argument('--seed', type=int, default=230224)
-    parser.add_argument('--treatment', type=str, nargs='+', default='treatycommit')
+    parser.add_argument('--treatment', type=str, nargs='+', default=['treatycommit'])
     parser.add_argument('--outcome', type=str, default='resp')
+    parser.add_argument('--outcome-model', type=str, default='elasticnet')
+    parser.add_argument('--outcome-lm-name', type=str, default='all-mpnet-base-v2')
+    parser.add_argument('--outcome-lm-library', type=str, default='sentence-transformers')
     parser.add_argument('--text-col', type=str, default='text_full')
-    parser.add_argument('--clf', type=str, default='logistic')
+    parser.add_argument('--clf', type=str, default='lr')
     parser.add_argument('--estimate', type=str, default='diff')
-    parser.add_argument('--lm-name', type=str, default='bert-base-uncased')
+    parser.add_argument('--lm-name', type=str, default='gpt2')
     parser.add_argument('--lm-library', type=str, default='transformers')
     parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--marginal-probs', action='store_true')
     parser.add_argument('--ci', action='store_true')
     parser.add_argument('--scale', action='store_true')
-    parser.add_argument('--output-estimate', action='store_true')
+    parser.add_argument('--output-outcomes', action='store_true')
     parser.add_argument('--save-csvs', action='store_true')
+    parser.add_argument('--validate', action='store_true')
     args = parser.parse_args()
 
     return args
@@ -131,46 +135,56 @@ def get_var_lm(idx, df, weights, y_mean, args):
     return val
 
 def get_estimate(estimate, method, treatment, ci):
-    if estimate == 'diff':       
-        n1 = np.sum(df[treatment].values)
-        n0 = np.sum(1-df[treatment].values)
-        if method == 'clm' or method == 'mlm':
-            weights1_noadj = all_probs*df[treatment].values/(pr_x*norm_sum)
-            weights0_noadj = all_probs*(1-df[treatment].values)/(pr_x*norm_sum)
-        elif method == 'clf':
-            weights1_noadj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df[treatment].values
-            weights0_noadj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*(1-df[treatment].values)
-        
-        weight_norm1 = np.sum(weights1_noadj)/n1
-        weights1 = weights1_noadj/weight_norm1
-        mu1 = np.sum(weights1*df[args.outcome].values)/n1
+    a = df[treatment].values.flatten()
+    y = df[args.outcome].values.flatten()
+    n1 = np.sum(a)
+    n0 = np.sum(1-a)
+    n = df.shape[0]
+    if method == 'clm' or method == 'mlm':
+        weights1_noadj = all_probs*a/(pr_x*norm_sum)
+        weights0_noadj = all_probs*(1-a)/(pr_x*norm_sum)
+    elif method == 'clf':
+        weights1_noadj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*a
+        weights0_noadj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*(1-a)
 
-        weight_norm0 = np.sum(weights0_noadj)/n0
-        weights0 = weights0_noadj/weight_norm0
-        mu0 = np.sum(weights0*df[args.outcome].values)/n0
+    weight_norm1 = np.sum(weights1_noadj)/n1
+    weights1 = weights1_noadj/weight_norm1
 
-        est = mu1 - mu0
+    weight_norm0 = np.sum(weights0_noadj)/n0
+    weights0 = weights0_noadj/weight_norm0
 
-    elif estimate == 'lr':
-        if method == 'clm' or method == 'mlm':
-            y_adj = df[args.outcome]*all_probs/(pr_x*norm_sum)
-        elif method == 'clf':
-            y_adj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*df[args.outcome].values
-        
-        # weights = weights1
-        # weights[df[args.treatment] == 0] = weights0[df[args.treatment] == 0]
-        ols = OLS(y_adj, df.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1))
-        # ols = WLS(df[args.outcome].values, df.drop(['resp', 'numtexts', 'text1', 'text2', 'text3', 'text_full', 'resp_id'], axis=1),
-                #   weights=weights**2)
-        ols_result = ols.fit()
-        print(ols_result.summary())
-        quit()
+    weights_noadj = np.zeros(n)
+    weights_noadj[a==1] = weights1_noadj[a==1]
+    weights_noadj[a==0] = weights0_noadj[a==0]
+    weight_norm = np.sum(weights_noadj)/n
+    weights = weights_noadj/weight_norm
+
+    if args.estimate == 'diff':
+        mu1 = np.sum(weights1*y)/n1
+        mu0 = np.sum(weights0*y)/n0
+        mu = np.sum(weights*y)/n
+    elif args.estimate == 'dr':
+        if args.outcome_model == 'lr':
+            mu1_model = LinearRegression()
+            mu0_model = LinearRegression()
+            mu_model = LinearRegression()
+        elif args.outcome_model == 'elasticnet':
+            mu1_model = ElasticNet(l1_ratio=0.5, max_iter=10000)
+            mu0_model = ElasticNet(l1_ratio=0.5, max_iter=10000)
+            mu_model = ElasticNet(l1_ratio=0.5, max_iter=10000)
+
+        a_train = df_random_train[treatment].values.flatten()
+        mu1_model.fit(train_embeds[a_train==1], df_random_train[a_train==1][args.outcome].values.flatten())
+        mu0_model.fit(train_embeds[a_train==0], df_random_train[a_train==0][args.outcome].values.flatten())
+        mu_model.fit(train_embeds, df_random_train[args.outcome].values.flatten())
+        mu1 = np.sum((weights1*(y-mu1_model.predict(embeds_r)))[a==1])/n1 + np.mean(mu1_model.predict(embeds_t))
+        mu0 = np.sum((weights0*(y-mu0_model.predict(embeds_r)))[a==0])/n0 + np.mean(mu0_model.predict(embeds_t))
+        mu = np.sum(weights*(y-mu_model.predict(embeds_r)))/n + np.mean(mu_model.predict(embeds_t))
+
+    est = mu1 - mu0
 
     if ci:
-
-        y_mean1 = np.mean(df[df[treatment]==1][args.outcome].values)
-        y_mean0 = np.mean(df[df[treatment]==0][args.outcome].values)
-        var_list1 = ((weights1*df[args.outcome].values)[df[treatment]==1]-mu1)**2
+        var_list1 = ((weights1*y)[a==1]-mu1)**2
         # idxs1 = list(itertools.product(df_random_test[df_random_test[args.treatment]==1].index, df_random_test[df_random_test[args.treatment]==1].index))
         # var_list1 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights1, 
         #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
@@ -178,13 +192,16 @@ def get_estimate(estimate, method, treatment, ci):
         # idxs0 = list(itertools.product(df_random_test[df_random_test[args.treatment]==0].index, df_random_test[df_random_test[args.treatment]==0].index))
         # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
         #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
-        var_list0 = ((weights0*df[args.outcome].values)[df[treatment]==0]-mu0)**2
+        var_list0 = ((weights0*y)[a==0]-mu0)**2
         varhat0 = np.sum(var_list0)/(n0**2)
         varhat = varhat1 + varhat0
 
-        return (mu1, mu0, est, varhat)
+        var_list_overall = ((weights*y)-mu)**2
+        varhat_overall = np.sum(var_list_overall)/(n**2)
+
+        return (mu1, mu0, est, varhat, mu, varhat_overall)
     
-    return (mu1, mu0, est)
+    return (mu1, mu0, est, mu)
 
 gc.collect()
 torch.cuda.empty_cache()
@@ -204,58 +221,10 @@ df_target = pd.read_csv(os.path.join(args.data_dir, args.target_csv))
 # else:
 #     treat_prob = df_random_corp[args.treatment].mean()
 
-if args.method == 'mlm' or args.method == 'clm':
-
-    df = df_random
-    pr_x = 1/df.shape[0]
-    
-    if args.method == 'mlm':
-        get_prob_lm = get_prob_mlm
-        tokenizer = AutoTokenizer.from_pretrained(args.lm_name, max_length=512, truncation=True, padding=True)
-        model = AutoModelForMaskedLM.from_pretrained(args.lm_name)
-    elif args.method == 'clm':
-        get_prob_lm = get_prob_clm
-        tokenizer = AutoTokenizer.from_pretrained(args.lm_name)
-        tokenizer.padding_side = 'left'
-        tokenizer.pad_token = tokenizer.eos_token
-        model = AutoModelForCausalLM.from_pretrained(args.lm_name)
-
-    model.to(device)
-
-    if args.marginal_probs:
-        tokens1 = tokenizer(df_random.text1.fillna('').astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
-        tokens2 = tokenizer(df_random.text2.fillna('').astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
-        tokens3 = tokenizer(df_random.text3.fillna('').astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
-
-        ds1 = Dataset.from_dict(tokens1).with_format('torch')
-        dataloader1 = DataLoader(ds1, batch_size=args.batch_size, shuffle=False)
-
-        ds2 = Dataset.from_dict(tokens2).with_format('torch')
-        dataloader2 = DataLoader(ds2, batch_size=args.batch_size, shuffle=False)
-
-        ds3 = Dataset.from_dict(tokens3).with_format('torch')
-        dataloader3 = DataLoader(ds3, batch_size=args.batch_size, shuffle=False)
-
-        all_probs1 = get_prob_lm(dataloader1)
-        all_probs2 = get_prob_lm(dataloader2)
-        all_probs3 = get_prob_lm(dataloader3)
-
-        all_probs = all_probs1*all_probs2*all_probs3
-
-    else:
-        tokens = tokenizer(df_random[args.text_col].astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
-        ds = Dataset.from_dict(tokens).with_format('torch')
-        dataloader = DataLoader(ds, batch_size=args.batch_size, shuffle=False)
-
-        all_probs = get_prob_lm(dataloader)
-    
-    norm_sum = np.sum(all_probs)
-
-elif args.method == 'clf':
-
-    sentences = np.hstack([df_random[args.text_col].values, df_target[args.text_col].values])
-    labels = np.array([0]*df_random.shape[0] + [1]*df_target.shape[0])
-    sentences, labels = shuffle(sentences, labels, random_state=args.seed)
+sentences = np.hstack([df_random[args.text_col].values, df_target[args.text_col].values])
+labels = np.array([0]*df_random.shape[0] + [1]*df_target.shape[0])
+sentences, labels = shuffle(sentences, labels, random_state=args.seed)
+if args.method == 'clf':
 
     if args.lm_library == 'sentence-transformers':
         model = SentenceTransformer(args.lm_name)
@@ -273,10 +242,95 @@ elif args.method == 'clf':
 
     X_train, X_test, y_train, y_test, sentence_train, sentence_test = train_test_split(embeds, labels, sentences, test_size=0.9, random_state=args.seed)
 
-    if args.clf == 'logistic':
-        clf = LogisticRegressionCV(cv=5, random_state=args.seed, max_iter=1000)
+else:
+    sentence_train, sentence_test = train_test_split(sentences, test_size=0.9, random_state=args.seed)
+
+train_df = pd.DataFrame({args.text_col: sentence_train})
+test_df = pd.DataFrame({args.text_col: sentence_test})
+df_random_test = pd.merge(df_random, test_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
+df_target_test = pd.merge(df_target, test_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
+df_random_train = pd.merge(df_random, train_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
+df_target_train = pd.merge(df_target, train_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
+
+df = df_random_test
+df_t = df_target_test
+pr_x = 1/df.shape[0]
+
+if args.estimate == 'dr':
+    if args.outcome_lm_library == 'sentence-transformers':
+        outcome_lm = SentenceTransformer(args.outcome_lm_name)
+        outcome_lm.to(device)
+        train_embeds = outcome_lm.encode(df_random_train[args.text_col].values, show_progress_bar=True)
+        embeds_r = outcome_lm.encode(df[args.text_col].values, show_progress_bar=True)
+        embeds_t = outcome_lm.encode(df_t[args.text_col].values, show_progress_bar=True)
+
+    elif args.outcome_lm_library == 'transformers':
+        outcome_tokenizer = AutoTokenizer.from_pretrained(args.outcome_lm_name, max_length=512, truncation=True)
+        outcome_lm = AutoModel.from_pretrained(args.outcome_lm_name)
+        outcome_lm.to(device)
+        if 'Masked' not in model.config.architectures[0]:
+            outcome_tokenizer.pad_token = outcome_tokenizer.eos_token
+        
+        train_embeds = get_embeds(df_random_train[args.text_col].values.tolist(), outcome_tokenizer, outcome_lm, device)
+        embeds_r = get_embeds(df[args.text_col].values.tolist(), outcome_tokenizer, outcome_lm, device)
+        embeds_t = get_embeds(df_t[args.text_col].values.tolist(), outcome_tokenizer, outcome_lm, device)
+
+if args.save_csvs:
+    df_random_train.to_csv(os.path.join(args.data_dir, 'random_train.csv'), index=False)
+    df_target_train.to_csv(os.path.join(args.data_dir, 'target_train.csv'), index=False)
+    df_random_test.to_csv(os.path.join(args.data_dir, 'random_test.csv'), index=False)
+    df_target_test.to_csv(os.path.join(args.data_dir, 'target_test.csv'), index=False)
+
+if args.method == 'mlm' or args.method == 'clm':
+    
+    if args.method == 'mlm':
+        get_prob_lm = get_prob_mlm
+        tokenizer = AutoTokenizer.from_pretrained(args.lm_name, max_length=512, truncation=True, padding=True)
+        model = AutoModelForMaskedLM.from_pretrained(args.lm_name)
+    elif args.method == 'clm':
+        get_prob_lm = get_prob_clm
+        tokenizer = AutoTokenizer.from_pretrained(args.lm_name)
+        tokenizer.padding_side = 'left'
+        tokenizer.pad_token = tokenizer.eos_token
+        model = AutoModelForCausalLM.from_pretrained(args.lm_name)
+
+    model.to(device)
+
+    if args.marginal_probs:
+        tokens1 = tokenizer(df.text1.fillna('').astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
+        tokens2 = tokenizer(df.text2.fillna('').astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
+        tokens3 = tokenizer(df.text3.fillna('').astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
+
+        ds1 = Dataset.from_dict(tokens1).with_format('torch')
+        dataloader1 = DataLoader(ds1, batch_size=args.batch_size, shuffle=False)
+
+        ds2 = Dataset.from_dict(tokens2).with_format('torch')
+        dataloader2 = DataLoader(ds2, batch_size=args.batch_size, shuffle=False)
+
+        ds3 = Dataset.from_dict(tokens3).with_format('torch')
+        dataloader3 = DataLoader(ds3, batch_size=args.batch_size, shuffle=False)
+
+        all_probs1 = get_prob_lm(dataloader1)
+        all_probs2 = get_prob_lm(dataloader2)
+        all_probs3 = get_prob_lm(dataloader3)
+
+        all_probs = all_probs1*all_probs2*all_probs3
+
+    else:
+        tokens = tokenizer(df[args.text_col].astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
+        ds = Dataset.from_dict(tokens).with_format('torch')
+        dataloader = DataLoader(ds, batch_size=args.batch_size, shuffle=False)
+
+        all_probs = get_prob_lm(dataloader)
+    
+    norm_sum = np.sum(all_probs)
+
+elif args.method == 'clf':
+
+    if args.clf == 'lr':
+        clf = LogisticRegressionCV(cv=5, random_state=args.seed, max_iter=10000)
     elif args.clf == 'elasticnet':
-        clf = LogisticRegressionCV(cv=5, random_state=args.seed, penalty='elasticnet', solver='saga', l1_ratios=[0.5]*5, max_iter=1000)
+        clf = LogisticRegressionCV(cv=5, random_state=args.seed, penalty='elasticnet', solver='saga', l1_ratios=[0.5]*5, max_iter=10000)
     if args.scale:
         scaler = StandardScaler()
         scaler.fit(X_train)
@@ -284,67 +338,55 @@ elif args.method == 'clf':
     else:
         clf.fit(X_train, y_train)
 
-    train_df = pd.DataFrame({args.text_col: sentence_train})
-    test_df = pd.DataFrame({args.text_col: sentence_test})
-    df_random_test = pd.merge(df_random, test_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-    df_target_test = pd.merge(df_target, test_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-    df_random_train = pd.merge(df_random, train_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-    df_target_train = pd.merge(df_target, train_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-
-    if args.save_csvs:
-        df_random_train.to_csv(os.path.join(args.data_dir, 'random_train.csv'), index=False)
-        df_target_train.to_csv(os.path.join(args.data_dir, 'target_train.csv'), index=False)
-        df_random_test.to_csv(os.path.join(args.data_dir, 'random_test.csv'), index=False)
-        df_target_test.to_csv(os.path.join(args.data_dir, 'target_test.csv'), index=False)
-
-    df = df_random_test
-    pr_x = 1/df.shape[0]
-
     if args.marginal_probs:
         prob_list = []
-        for sent_group in tqdm(df_random_test[args.text_col].values):
+        for sent_group in tqdm(df[args.text_col].values):
             prob_list.append(get_prob_clf(model, clf, sent_group, args))
         probs = np.vstack(prob_list)
 
     else:
         if args.lm_library == 'sentence-transformers':
-            test_embeds = model.encode(df_random_test[args.text_col].values, show_progress_bar=True)
+            test_embeds = model.encode(df[args.text_col].values, show_progress_bar=True)
         elif args.lm_library == 'transformers':
-            test_embeds = get_embeds(df_random_test[args.text_col].values.astype(str).tolist(), tokenizer, model, device)
+            test_embeds = get_embeds(df[args.text_col].values.astype(str).tolist(), tokenizer, model, device)
 
         if args.scale:
             probs = clf.predict_proba(scaler.transform(test_embeds))
         else:
             probs = clf.predict_proba(test_embeds)
 
-    corp_prob = np.array([df_random_test.shape[0]/(df_random_test.shape[0]+df_target_test.shape[0]), 
-                        df_target_test.shape[0]/(df_random_test.shape[0]+df_target_test.shape[0])])
+    corp_prob = np.array([df.shape[0]/(df.shape[0]+df_t.shape[0]), 
+                        df_t.shape[0]/(df.shape[0]+df_t.shape[0])])
 
-headers = []
-if args.output_estimate:
-    headers = ['mu1', 'mu0', 'est']
-else:
-    headers = ['est']
-if args.ci:
-    headers += ['ci']
-headers += ['est_orig']
 
-if len(args.treatment) == 1 and args.treatment != 'all':
-    est_orig = np.mean(df[df[args.treatment] == 1][args.outcome].values) - np.mean(df[df[args.treatment] == 0][args.outcome].values)
+if args.validate:
+    
+    headers = ['$\hat{\mu}(P_{R \\rightarrow T})$', '$\hat{\mu}(P_R)$', '$\hat{\mu}(P_T)$']
+    mu_r = np.mean(df[args.outcome].values)
+    mu_t = np.mean(df_t[args.outcome].values)
     if args.ci:
-        mu1, mu0, est, varhat = get_estimate(args.estimate, args.method, args.treatment, args.ci)
+        headers += ['95\% CI ($\hat{\mu}(P_{R \\rightarrow T})$)', '95\% CI ($\hat{\mu}(P_R)$)', '95\% CI ($\hat{\mu}(P_T)$)']
+        mu1, mu0, est, varhat, mu, varhat_overall = get_estimate(args.estimate, args.method, args.treatment, args.ci)
+        varhat_r = np.sum((df[args.outcome].values-np.mean(df[args.outcome].values))**2)/(df.shape[0]**2)
+        varhat_t = np.sum((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))**2)/(df_t.shape[0]**2)
     else:
-        mu1, mu0, est = get_estimate(args.estimate, args.method, args.treatment, args.ci)
-    if args.output_estimate:
-        rows = [['{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]]
-    else: 
-        rows = [['{:.3f}'.format(est)]]
+        mu1, mu0, est, mu = get_estimate(args.estimate, args.method, args.treatment, args.ci)
+    rows = [['Outcome', '{:.3f}'.format(mu), '{:.3f}'.format(mu_r), '{:.3f}'.format(mu_t)]]
     if args.ci:
-        rows[0] += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
-    rows[0] += ['{:.3f}'.format(est_orig)]
+        rows[0] += ['[{:.3f}, {:.3f}]'.format(mu-1.96*np.sqrt(varhat_overall), mu+1.96*np.sqrt(varhat_overall)),
+                    '[{:.3f}, {:.3f}]'.format(mu_r-1.96*np.sqrt(varhat_r), mu_r+1.96*np.sqrt(varhat_r)),
+                    '[{:.3f}, {:.3f}]'.format(mu_t-1.96*np.sqrt(varhat_t), mu_t+1.96*np.sqrt(varhat_t))]
 
 else:
-    if args.treatment == 'all':
+    headers = []
+    if args.output_outcomes:
+        headers = ['$\hat{\mu}(P_1)$', '$\hat{\mu}(P_0)$', '$\hat{\\tau}$']
+    else:
+        headers = ['$\hat{\\tau}$']
+    if args.ci:
+        headers += ['95\% CI ($\hat{\\tau}$)']
+
+    if args.treatment == ['all']:
         treatments = ['treatycommit', 'brave', 'evil', 'flag', 'threat', 'economy', 'treatyviolation']
         treatment_names = ['Commitment', 'Bravery', 'Mistreatment', 'Flags', 'Threat', 'Economy', 'Violation']
     else:
@@ -356,21 +398,19 @@ else:
         varhats = []
     for i in range(len(treatments)):
         treatment = treatments[i]
-        est_orig = np.mean(df[df[treatment] == 1][args.outcome].values) - np.mean(df[df[treatment] == 0][args.outcome].values)
         if args.ci:
-            mu1, mu0, est, varhat = get_estimate(args.estimate, args.method, treatment, args.ci)
+            mu1, mu0, est, varhat, mu, varhat_overall = get_estimate(args.estimate, args.method, treatment, args.ci)
             estimates.append(est)
             varhats.append(varhat)
         else:
-            mu1, mu0, est = get_estimate(args.estimate, args.method, treatment, args.ci)
+            mu1, mu0, est, mu = get_estimate(args.estimate, args.method, treatment, args.ci)
             estimates.append(est)
-        if args.output_estimate:
+        if args.output_outcomes:
             row = [treatment_names[i], '{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]
         else:
             row = [treatment_names[i], '{:.3f}'.format(est)]
         if args.ci:
             row += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
-        row += ['{:.3f}'.format(est_orig)]
         rows.append(row)
 
-print(tabulate(rows, headers=headers, tablefmt='latex'))
+print(tabulate(rows, headers=headers, tablefmt='latex_raw'))
