@@ -354,11 +354,13 @@ Our target corpus $P^T$ is derived from the U.S. Congressional speeches on the H
 
 \subsubsection{Amazon music reviews}
 
-This dataset from \cite{przyant2021causal} contains Amazon reviews of music purchases, with a synthetic label that is a function of (1) the rating of the review and (2) the media format of the music (CD or digital). This dataset can be considered ``randomized,'' which makes it suitable for use as $P^R$; however, by splitting the dataset according to media format, we can also treat one split as $P^R$ and the other as $P^T$. Then, since both splits are randomized, an effect transported from $P^R$ to $P^T$ can be validated against an effect estimated directly from $P^T$. We parametrize the text to obtain interpretable $g(X), h(X)$ using the LIWC and Empath lexicons
+This dataset from \cite{przyant2021causal} contains Amazon reviews of music purchases, with a synthetic label that is a function of (1) the rating of the review and (2) the media format of the music (CD or digital). This dataset can be considered ``randomized,'' which makes it suitable for use as $P^R$; however, by splitting the dataset according to media format, we can also treat one split as $P^R$ and the other as $P^T$. Then, since both splits are randomized, an effect transported from $P^R$ to $P^T$ can be validated against an effect estimated directly from $P^T$. We parametrize the text to obtain interpretable $g(X), h(X)$ using the LIWC and Empath lexicons.
+
+\subsubsection{Amazon reviews}
+
+This dataset contains Amazon reviews of musical instruments and office products, with a synthetic label that is a noisy function of the text embeddings and LIWC categories. As with the Amazon music reviews dataset, this dataset can be used for validation. $P^R$ and $P^T$ are obtained by splitting on the product category of the review.
 
 \subsection{Results}
-
-\vl{All HK CIs need to be updated}
 
 \subsubsection{Hong Kong: Classification approach}
 
@@ -370,43 +372,37 @@ We report our treatment effect estimates using the classification approach descr
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 72.087 & 68.743 & \textbf{\textcolor{green!50!black}{3.343$^*$}} & [0.294, 6.393] \\
-        Bravery & 74.134 & 69.604 & \textbf{\textcolor{green!50!black}{4.529$^*$}} & [1.021, 8.038] \\
-        Mistreatment & 69.844 & 70.972 & \textcolor{red!80!black}{-1.127} & [-4.391, 2.136] \\
-        Flags & 67.943 & 71.138 & \textcolor{red!80!black}{-3.195} & [-6.811, 0.422] \\
-        Threat & 69.034 & 71.32 & \textcolor{red!80!black}{-2.285} & [-5.586, 1.015]  \\
-        Economy & 70.254 & 70.857 & \textcolor{red!80!black}{-0.603} & [-4.308, 3.101] \\
-        Violation & 70.729 & 70.731 & \textcolor{red!80!black}{-0.001} & [-3.495, 3.492] \\
+        Commitment & 72.087 & 68.743 & \textcolor{green!50!black}{3.343} & [-3.973, 10.660] \\
+        Bravery & 74.134 & 69.604 & \textcolor{green!50!black}{4.529} & [-6.178, 15.237] \\
+        Mistreatment & 69.844 & 70.972 & \textcolor{red!80!black}{-1.127} & [-8.310, 6.056] \\
+        Flags & 67.943 & 71.138 & \textcolor{red!80!black}{-3.195} & [-10.482, 4.092] \\
+        Threat & 69.034 & 71.32 & \textcolor{red!80!black}{-2.285} & [-10.807, 6.237]  \\
+        Economy & 70.254 & 70.857 & \textcolor{red!80!black}{-0.603} & [-9.482, 8.276] \\
+        Violation & 70.729 & 70.731 & \textcolor{red!80!black}{-0.001} & [-8.301, 8.299] \\
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet.}
     \label{tab:results_clf_mpnet}
 \end{table}
 
-\begin{table}[!ht]
-    \centering
-    \begin{tabular}{c|cccc}
-        \toprule
-        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
-        \midrule
-        Commitment & 74.701 & 70.379 & \textcolor{green!50!black}{4.322} & [-1.304, 9.948] \\
-        Bravery & 77.474 & 71.958 & \textcolor{green!50!black}{5.516} & [-1.190, 12.221] \\
-        Mistreatment & 69.899 & 73.844 & \textcolor{red!80!black}{-3.945} & [-9.782, 1.891] \\
-        Flags & 70.762 & 74.209 & \textcolor{red!80!black}{-3.447} & [-10.955, 4.061] \\
-        Threat & 75.492 & 72.778 & \textcolor{green!50!black}{2.714} & [-3.579, 9.008] \\
-        Economy & 75.116 & 73.335 & \textcolor{green!50!black}{1.781} & [-4.563, 8.126] \\
-        Violation & 69.977 & 73.585 & \textcolor{red!80!black}{-3.608} & [-11.861, 4.645] \\
-        \bottomrule
-    \end{tabular}
-    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Text probabilities are computed from marginal sentence probabilities.}
-    \label{tab:results_clf_mpnet_marginal}
-\end{table}
-
-% These initial results differ somewhat from the original findings in \cite{fong2021causal},. Since the original study fails to reject the null for all effects except that of \textit{commitment}, for which they find a positive effect, it is notable that our method reports that commitment corresponds to a negative effect.
-
-% \vl{The effect sizes seem consistent with the original paper, but does it make sense that the $\hat{\mu}$ estimates are so small, given the scale of the response (0-100)?
-% \newline \newline
-% Also, I'm not too sure about the variance computation. It seems like the way we define the variance estimate will produce almost the same CI (in terms of width) for every treatment. The CIs also seem much narrower than I would expect?}
+% \begin{table}[!ht]
+%     \centering
+%     \begin{tabular}{c|cccc}
+%         \toprule
+%         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+%         \midrule
+%         Commitment & 74.701 & 70.379 & \textcolor{green!50!black}{4.322} & [-1.304, 9.948] \\
+%         Bravery & 77.474 & 71.958 & \textcolor{green!50!black}{5.516} & [-1.190, 12.221] \\
+%         Mistreatment & 69.899 & 73.844 & \textcolor{red!80!black}{-3.945} & [-9.782, 1.891] \\
+%         Flags & 70.762 & 74.209 & \textcolor{red!80!black}{-3.447} & [-10.955, 4.061] \\
+%         Threat & 75.492 & 72.778 & \textcolor{green!50!black}{2.714} & [-3.579, 9.008] \\
+%         Economy & 75.116 & 73.335 & \textcolor{green!50!black}{1.781} & [-4.563, 8.126] \\
+%         Violation & 69.977 & 73.585 & \textcolor{red!80!black}{-3.608} & [-11.861, 4.645] \\
+%         \bottomrule
+%     \end{tabular}
+%     \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Text probabilities are computed from marginal sentence probabilities.}
+%     \label{tab:results_clf_mpnet_marginal}
+% \end{table}
 
 \subsubsection{Hong Kong: Language modeling approach}
 
@@ -423,13 +419,13 @@ We report our treatment effect estimates using the language modeling approach de
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 71.92 & 68.363 & \textbf{\textcolor{green!50!black}{3.557$^*$}} & [1.071, 6.043] \\
-        Bravery & 72.785 & 69.571 & \textbf{\textcolor{green!50!black}{3.214$^*$}} & [0.380, 6.048]  \\
-        Mistreatment & 69.633 & 70.303 & \textcolor{red!80!black}{-0.670} & [-3.550, 2.210] \\
-        Flags & 69.022 & 70.422 & \textcolor{red!80!black}{-1.400} & [-4.401, 1.600] \\
-        Threat & 68.908 & 70.505 & \textcolor{red!80!black}{-1.597} & [-4.527, 1.332] \\
-        Economy & 69.971 & 70.235 & \textcolor{red!80!black}{-0.264} & [-3.068, 2.541] \\
-        Violation & 71.025 & 70.013 & \textcolor{green!50!black}{1.011} & [-1.954, 3.977] \\
+        Commitment & 71.92 & 68.363 & \textcolor{green!50!black}{3.557} & [-0.211, 8.268] \\
+        Bravery & 72.785 & 69.571 & \textcolor{green!50!black}{3.214} & [-3.030, 7.762]  \\
+        Mistreatment & 69.633 & 70.303 & \textcolor{red!80!black}{-0.670} & [-6.329, 3.846]  \\
+        Flags & 69.022 & 70.422 & \textcolor{red!80!black}{-1.400} & [-6.586, 3.781] \\
+        Threat & 68.908 & 70.505 & \textcolor{red!80!black}{-1.597} & [-5.727, 4.312] \\
+        Economy & 69.971 & 70.235 & \textcolor{red!80!black}{-0.264} & [-4.718, 6.061] \\
+        Violation & 71.025 & 70.013 & \textcolor{green!50!black}{1.011} & [-4.911, 5.246] \\
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2.}
@@ -443,106 +439,175 @@ We report our treatment effect estimates using the language modeling approach de
         \toprule
         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
         \midrule
-        Commitment & 72.046 & 68.347 & \textbf{\textcolor{green!50!black}{3.699$^*$}} & [1.192, 6.205] \\
-        Bravery & 73.1 & 69.598 & \textbf{\textcolor{green!50!black}{3.503$^*$}} & [0.644, 6.361] \\
-        Mistreatment & 69.788 & 70.341 & \textcolor{red!80!black}{-0.553} & [-3.447, 2.341] \\
-        Flags & 69.122 & 70.463 & \textcolor{red!80!black}{-1.341} & [-4.373, 1.691] \\
-        Threat & 68.92 & 70.565 & \textcolor{red!80!black}{-1.645} & [-4.616, 1.326] \\
-        Economy & 70.158 & 70.269 & \textcolor{red!80!black}{-0.112} & [-2.921, 2.697] \\
-        Violation & 71.11 & 70.077 & \textcolor{green!50!black}{1.033} & [-1.971, 4.036] \\
+        Commitment & 72.046 & 68.347 & \textcolor{green!50!black}{3.699} & [-0.321, 7.719] \\
+        Bravery & 73.1 & 69.598 & \textcolor{green!50!black}{3.503} & [-1.729, 8.734] \\
+        Mistreatment & 69.788 & 70.341 & \textcolor{red!80!black}{-0.553} & [-5.472, 4.368] \\
+        Flags & 69.122 & 70.463 & \textcolor{red!80!black}{-1.341} & [-6.382, 3.702] \\
+        Threat & 68.92 & 70.565 & \textcolor{red!80!black}{-1.645} & [-6.438, 3.148] \\
+        Economy & 70.158 & 70.269 & \textcolor{red!80!black}{-0.112} & [-5.210, 4.989] \\
+        Violation & 71.11 & 70.077 & \textcolor{green!50!black}{1.033} & [-3.913, 5.979] \\
         \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
     \label{tab:results_clm_gpt2_finetuned}
 \end{table}
 
-\begin{table}[!ht]
-    \centering
-    \begin{tabular}{c|cccc}
-        \toprule
-        Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
-        \midrule
-        Commitment & 70.746 & 68.283 & \textcolor{green!50!black}{2.464} & [-0.279, 5.206] \\
-        Bravery & 70.614 & 68.899 & \textcolor{green!50!black}{1.715} & [-1.433, 4.862] \\
-        Mistreatment & 69.645 & 69.276 & \textcolor{green!50!black}{0.369} & [-2.838, 3.575] \\
-        Flags & 68.127 & 69.762 & \textcolor{red!80!black}{-1.634} & [-4.965, 1.697] \\
-        Threat & 68.579 & 69.835 & \textcolor{red!80!black}{-1.255} & [-4.344, 1.833] \\
-        Economy & 69.5 & 69.342 & \textcolor{green!50!black}{0.158} & [-3.013, 3.329]  \\
-        Violation & 69.157 & 69.498 & \textcolor{red!80!black}{-0.341} & [-3.522, 2.839] \\
-        \bottomrule
-    \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Text probabilities are computed from marginal sentence probabilities.}
-    \label{tab:results_clm_gpt2_marginal}
-\end{table}
+% \begin{table}[!ht]
+%     \centering
+%     \begin{tabular}{c|cccc}
+%         \toprule
+%         Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}$ & 95\% CI \\
+%         \midrule
+%         Commitment & 70.746 & 68.283 & \textcolor{green!50!black}{2.464} & [-0.279, 5.206] \\
+%         Bravery & 70.614 & 68.899 & \textcolor{green!50!black}{1.715} & [-1.433, 4.862] \\
+%         Mistreatment & 69.645 & 69.276 & \textcolor{green!50!black}{0.369} & [-2.838, 3.575] \\
+%         Flags & 68.127 & 69.762 & \textcolor{red!80!black}{-1.634} & [-4.965, 1.697] \\
+%         Threat & 68.579 & 69.835 & \textcolor{red!80!black}{-1.255} & [-4.344, 1.833] \\
+%         Economy & 69.5 & 69.342 & \textcolor{green!50!black}{0.158} & [-3.013, 3.329]  \\
+%         Violation & 69.157 & 69.498 & \textcolor{red!80!black}{-0.341} & [-3.522, 2.839] \\
+%         \bottomrule
+%     \end{tabular}
+%     \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Text probabilities are computed from marginal sentence probabilities.}
+%     \label{tab:results_clm_gpt2_marginal}
+% \end{table}
 
-\subsubsection{Amazon: Classification approach}
-
-Tables \ref{tab:results_clf_mpnet_amazon1} and \ref{tab:results_clf_mpnet_amazon2}. According to the direct effect estimates, positive emotion has a larger positive effect on the outcome for CD reviews than for digital music reviews, and negative emotion has a larger negative effect on the outcome for CD reviews than for digital music reviews. Conversely, anxiety has a smaller negative effect on the outcome for CD reviews than for digital music reviews. Our transferred effect estimates reflect these trends for negative emotion and anxiety but not for positive emotion.
+\newpage
+\subsubsection{Amazon \cite{przyant2021causal}: Classification approach}
 
 \begin{table}[!ht]
     \centering
     \begin{tabular}{c|ccccc}
     \toprule
-    Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$ & 95\% CI & $\hat{\tau}_T$ \\
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
     \midrule
-    Positive emotion & 0.631 & 0.632 & -0.001 & [-0.095, 0.093] &      0.066 \\
-    Negative emotion & 0.616 & 0.639 & -0.023 & [-0.080, 0.034] &     -0.045 \\
-    Anxiety    & 0.629 & 0.631 & -0.003 & [-0.120, 0.114] &     -0.036 \\
+    posemo      &              0.631 &              0.632 & -0.001 [-0.095, 0.093]           & 0.038 [0.001, 0.074]    & 0.067 [0.041, 0.094]    \\
+    negemo      &              0.616 &              0.639 & -0.023 [-0.080, 0.034]           & -0.026 [-0.049, -0.003] & -0.040 [-0.059, -0.021] \\
+    anx         &              0.629 &              0.631 & -0.003 [-0.120, 0.114]           & -0.052 [-0.095, -0.009] & -0.039 [-0.072, -0.005] \\
     \bottomrule
     \end{tabular}
     \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
-    \label{tab:results_clf_mpnet_amazon1}
+    \label{tab:results_clf_mpnet_amazon_pryzant}
 \end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|ccc}
+    \toprule
+     & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+     \midrule
+     Outcome & 0.631 [0.604, 0.659]               & 0.642 [0.632, 0.653] & 0.448 [0.438, 0.457] \\
+    \bottomrule
+    \end{tabular}
+    \caption{Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_pryzant}.}
+    \label{tab:results_clf_mpnet_amazon_pryzant_outcome}
+\end{table}
+
+\subsubsection{Amazon \cite{przyant2021causal} Language modeling approach}
 
 \begin{table}[!ht]
     \centering
     \begin{tabular}{c|ccccc}
     \toprule
-    Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$ & 95\% CI & $\hat{\tau}_T$ \\
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
     \midrule
-    Positive emotion & 0.469 & 0.416 &  0.053 & [0.013, 0.093]   &      0.038 \\
-    Negative emotion & 0.437 & 0.477 & -0.04  & [-0.066, -0.014] &     -0.026 \\
-    Anxiety    & 0.432 & 0.465 & -0.033 & [-0.079, 0.013]  &     -0.052 \\
+    posemo      &              0.634 &              0.621 & 0.013 [-0.184, 0.209]            & 0.038 [0.001, 0.074]    & 0.067 [0.041, 0.094]    \\
+    negemo      &              0.622 &              0.637 & -0.015 [-0.119, 0.090]           & -0.026 [-0.049, -0.003] & -0.040 [-0.059, -0.021] \\
+    anx         &              0.598 &              0.635 & -0.037 [-0.296, 0.222]           & -0.052 [-0.095, -0.009] & -0.039 [-0.072, -0.005] \\
     \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for CD purchases, while $P^T$ is the distribution of Amazon reviews for digital music purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
-    \label{tab:results_clf_mpnet_amazon2}
+    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases.}
+    \label{tab:results_clm_gpt2_finetuned_amazon_pryzant}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+    \toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+    \midrule
+    Outcome & 0.632 [0.582, 0.681]               & 0.642 [0.632, 0.653] & 0.448 [0.438, 0.457] \\
+    \bottomrule
+    \end{tabular}
+    \caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_finetuned_amazon_pryzant}.}
+    \label{tab:results_clm_gpt2_finetuned_amazon_pryzant_outcome}
+\end{table}
+
+\newpage
+\subsubsection{Amazon: Classification approach}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccccc}
+\toprule
+      Treatment &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$       & $\hat{\tau}_T$       \\
+\midrule
+    sexual   &              5.241 &              2.715 & 2.526 [0.080, 4.972]             & 2.482 [1.955, 3.008] & 2.534 [1.853, 3.215] \\
+    female   &              5.188 &              2.727 & 2.461 [0.287, 4.635]             & 3.107 [2.529, 3.686] & 2.789 [2.328, 3.250] \\
+    filler   &              4.903 &              2.737 & 2.167 [-1.036, 5.369]            & 2.889 [2.275, 3.503] & 3.597 [2.676, 4.518] \\
+    netspeak &              5.53  &              2.7   & 2.830 [0.601, 5.060]             & 3.231 [2.830, 3.633] & 3.511 [2.938, 4.084] \\
+    home     &              5.266 &              2.532 & 2.734 [0.510, 4.957]             & 2.601 [2.363, 2.840] & 2.474 [2.251, 2.696] \\
+    informal &              4.738 &              2.145 & 2.593 [1.174, 4.012]             & 3.243 [3.091, 3.396] & 3.179 [3.018, 3.340] \\
+    shehe    &              6.243 &              2.723 & 3.520 [1.170, 5.870]             & 2.814 [2.344, 3.284] & 2.669 [2.226, 3.112] \\
+    nonflu   &              5.096 &              2.484 & 2.613 [1.109, 4.116]             & 2.939 [2.745, 3.132] & 2.896 [2.698, 3.095] \\
+    assent   &              5.403 &              2.508 & 2.895 [0.634, 5.157]             & 2.858 [2.610, 3.105] & 2.823 [2.521, 3.125] \\
+    death    &              4.698 &              2.724 & 1.974 [-0.812, 4.760]            & 2.870 [2.368, 3.372] & 2.728 [2.053, 3.403] \\
+ \bottomrule
+    \end{tabular}
+    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+    \label{tab:results_clf_mpnet_amazon_synthetic}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|ccc}
+    \toprule
+     & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 2.777 [1.984, 3.570]               & 4.175 [4.099, 4.251] & 4.127 [4.054, 4.199] \\
+\bottomrule
+    \end{tabular}
+    \caption{Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic}.}
+    \label{tab:results_clf_mpnet_amazon_synthetic_outcome}
 \end{table}
 
 \subsubsection{Amazon: Language modeling approach}
 
-Tables \ref{tab:results_clm_gpt2_finetuned_amazon1} and \ref{tab:results_clm_gpt2_finetuned_amazon2}. Our transferred effect estimates reflect the direct effect trends for anxiety only. \vl{Need to check why the direct effect estimates aren't exactly the same as in the classification approach---they should be identical?}
-
 \begin{table}[!ht]
     \centering
-    \begin{tabular}{c|ccccc}
-    \toprule
-    Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$ & 95\% CI & $\hat{\tau}_T$ \\
-    \midrule
-    Positive emotion & 0.641 & 0.598 &  0.044 & [-0.006, 0.093] & 0.063 \\
-    Negative emotion & 0.625 & 0.643 & -0.018 & [-0.052, 0.016] & -0.045 \\
-    Anxiety  & 0.593 & 0.64  & -0.047 & [-0.111, 0.017] & -0.047 \\
-    \bottomrule
+    \begin{tabular}{c|cccccc}
+\toprule
+      Treatment &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$       & $\hat{\tau}_T$       \\
+\midrule
+    sexual   &              7.092 &              7.451 & -0.359 [-13.963, 13.246]         & 2.482 [1.955, 3.008] & 2.534 [1.853, 3.215] \\
+    female   &              5.123 &              7.475 & -2.352 [-13.091, 8.387]          & 3.107 [2.529, 3.686] & 2.789 [2.328, 3.250] \\
+    filler   &              5.669 &              7.453 & -1.784 [-13.798, 10.230]         & 2.889 [2.275, 3.503] & 3.597 [2.676, 4.518] \\
+    netspeak &              8.099 &              7.435 & 0.664 [-15.591, 16.919]          & 3.231 [2.830, 3.633] & 3.511 [2.938, 4.084] \\
+    home     &              7.39  &              7.458 & -0.068 [-15.745, 15.610]         & 2.601 [2.363, 2.840] & 2.474 [2.251, 2.696] \\
+    informal &              8.767 &              3.85  & 4.918 [-9.833, 19.668]           & 3.243 [3.091, 3.396] & 3.179 [3.018, 3.340] \\
+    shehe    &              9.096 &              4.855 & 4.241 [-12.924, 21.407]          & 2.814 [2.344, 3.284] & 2.669 [2.226, 3.112] \\
+    nonflu   &              9.046 &              4.788 & 4.258 [-12.645, 21.161]          & 2.939 [2.745, 3.132] & 2.896 [2.698, 3.095] \\
+    assent   &              7.683 &              7.408 & 0.275 [-15.075, 15.624]          & 2.858 [2.610, 3.105] & 2.823 [2.521, 3.125] \\
+    death    &              6.012 &              7.459 & -1.446 [-13.198, 10.305]         & 2.870 [2.368, 3.372] & 2.728 [2.053, 3.403] \\
+\bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
-    \label{tab:results_clm_gpt2_finetuned_amazon1}
+    \caption{Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+    \label{tab:results_clm_gpt2_amazon_synthetic}
 \end{table}
 
 \begin{table}[!ht]
-    \centering
-    \begin{tabular}{c|ccccc}
-    \toprule
-    Treatment & $\hat{\mu}(P_1)$ & $\hat{\mu}(P_0)$ & $\hat{\tau}_{T \rightarrow R}$ & 95\% CI & $\hat{\tau}_R$ \\
-    \midrule
-    Positive emotion & 0.459 & 0.398 &  0.062 & [0.028, 0.095]   &  0.035   \\
-    Negative emotion & 0.42  & 0.472 & -0.051 & [-0.076, -0.027] & -0.028 \\
-    Anxiety    & 0.382 & 0.457 & -0.075 & [-0.116, -0.033] &  -0.054 \\
-    \bottomrule
-    \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$. Here, $P^R$ is the distribution of Amazon reviews for CD purchases, while $P^T$ is the distribution of Amazon reviews for digital music purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
-    \label{tab:results_clm_gpt2_finetuned_amazon2}
+\centering
+\begin{tabular}{c|ccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 7.449 [-2.819, 17.716]             & 4.175 [4.099, 4.251] & 4.127 [4.054, 4.199] \\
+\bottomrule
+\end{tabular}
+\caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_synthetic}.}
+\label{tab:results_clm_gpt2_amazon_synthetic_outcome}
 \end{table}
 
+\newpage
 \subsection{Discussion}
 
 \vl{Marginal probabilities seem to produce less stable results, so we will disregard those for now.}
