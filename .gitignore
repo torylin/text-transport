@@ -2,7 +2,7 @@
 *.aux
 *.log
 *.out
-# *.csv
+*.csv
 */cache
 *cache
 *.nav
