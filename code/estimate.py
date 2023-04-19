@@ -134,35 +134,44 @@ def get_var_lm(idx, df, weights, y_mean, args):
 
     return val
 
-def get_estimate(estimate, method, treatment, ci):
-    a = df[treatment].values.flatten()
+def get_estimate(treatment='a'):
+
+    # pdb.set_trace()
+
     y = df[args.outcome].values.flatten()
-    n1 = np.sum(a)
-    n0 = np.sum(1-a)
     n = df.shape[0]
-    if method == 'clm' or method == 'mlm':
-        weights1_noadj = all_probs*a/(pr_x*norm_sum)
-        weights0_noadj = all_probs*(1-a)/(pr_x*norm_sum)
-    elif method == 'clf':
-        weights1_noadj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*a
-        weights0_noadj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])*(1-a)
 
-    weight_norm1 = np.sum(weights1_noadj)/n1
-    weights1 = weights1_noadj/weight_norm1
+    if not treatment == 'none':
+        a = df[treatment].values.flatten()
+        n1 = np.sum(a)
+        n0 = np.sum(1-a)
 
-    weight_norm0 = np.sum(weights0_noadj)/n0
-    weights0 = weights0_noadj/weight_norm0
-
-    weights_noadj = np.zeros(n)
-    weights_noadj[a==1] = weights1_noadj[a==1]
-    weights_noadj[a==0] = weights0_noadj[a==0]
+    if args.method == 'clm' or args.method == 'mlm':
+        weights_noadj = all_probs/(pr_x*norm_sum)
+    elif args.method == 'clf':
+        weights_noadj = probs[:,1]*corp_prob[0]/(corp_prob[1]*probs[:,0])
+    
     weight_norm = np.sum(weights_noadj)/n
     weights = weights_noadj/weight_norm
 
+    if not treatment == 'none':
+
+        weights1_noadj = weights_noadj*a
+        weights0_noadj = weights_noadj*(1-a)
+
+        weight_norm1 = np.sum(weights1_noadj)/n1
+        weights1 = weights1_noadj/weight_norm1
+
+        weight_norm0 = np.sum(weights0_noadj)/n0
+        weights0 = weights0_noadj/weight_norm0
+
     if args.estimate == 'diff':
-        mu1 = np.sum(weights1*y)/n1
-        mu0 = np.sum(weights0*y)/n0
+        if not treatment == 'none':
+            mu1 = np.sum(weights1*y)/n1
+            mu0 = np.sum(weights0*y)/n0
+
         mu = np.sum(weights*y)/n
+    
     elif args.estimate == 'dr':
         if args.outcome_model == 'lr':
             mu1_model = LinearRegression()
@@ -172,36 +181,46 @@ def get_estimate(estimate, method, treatment, ci):
             mu1_model = ElasticNet(l1_ratio=0.5, max_iter=10000)
             mu0_model = ElasticNet(l1_ratio=0.5, max_iter=10000)
             mu_model = ElasticNet(l1_ratio=0.5, max_iter=10000)
-
-        a_train = df_random_train[treatment].values.flatten()
-        mu1_model.fit(train_embeds[a_train==1], df_random_train[a_train==1][args.outcome].values.flatten())
-        mu0_model.fit(train_embeds[a_train==0], df_random_train[a_train==0][args.outcome].values.flatten())
+        
+        if not treatment == 'none':
+            a_train = df_random_train[treatment].values.flatten()
+            mu1_model.fit(train_embeds[a_train==1], df_random_train[a_train==1][args.outcome].values.flatten())
+            mu0_model.fit(train_embeds[a_train==0], df_random_train[a_train==0][args.outcome].values.flatten())
+            mu1 = np.sum((weights1*(y-mu1_model.predict(embeds_r)))[a==1])/n1 + np.mean(mu1_model.predict(embeds_t))
+            mu0 = np.sum((weights0*(y-mu0_model.predict(embeds_r)))[a==0])/n0 + np.mean(mu0_model.predict(embeds_t))
+            
         mu_model.fit(train_embeds, df_random_train[args.outcome].values.flatten())
-        mu1 = np.sum((weights1*(y-mu1_model.predict(embeds_r)))[a==1])/n1 + np.mean(mu1_model.predict(embeds_t))
-        mu0 = np.sum((weights0*(y-mu0_model.predict(embeds_r)))[a==0])/n0 + np.mean(mu0_model.predict(embeds_t))
         mu = np.sum(weights*(y-mu_model.predict(embeds_r)))/n + np.mean(mu_model.predict(embeds_t))
 
-    est = mu1 - mu0
+    if not treatment == 'none':
+        est = mu1 - mu0
 
-    if ci:
-        var_list1 = ((weights1*y)[a==1]-mu1)**2
-        # idxs1 = list(itertools.product(df_random_test[df_random_test[args.treatment]==1].index, df_random_test[df_random_test[args.treatment]==1].index))
-        # var_list1 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights1, 
-        #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
-        varhat1 = np.sum(var_list1)/(n1**2)
-        # idxs0 = list(itertools.product(df_random_test[df_random_test[args.treatment]==0].index, df_random_test[df_random_test[args.treatment]==0].index))
-        # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
-        #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
-        var_list0 = ((weights0*y)[a==0]-mu0)**2
-        varhat0 = np.sum(var_list0)/(n0**2)
-        varhat = varhat1 + varhat0
+    if args.ci:
+        if not treatment == 'none':
+            var_list1 = ((weights1*y)[a==1]-mu1)**2
+            # idxs1 = list(itertools.product(df_random_test[df_random_test[args.treatment]==1].index, df_random_test[df_random_test[args.treatment]==1].index))
+            # var_list1 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights1, 
+            #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
+            varhat1 = np.sum(var_list1)/(n1**2)
+            # idxs0 = list(itertools.product(df_random_test[df_random_test[args.treatment]==0].index, df_random_test[df_random_test[args.treatment]==0].index))
+            # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
+            #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
+            var_list0 = ((weights0*y)[a==0]-mu0)**2
+            varhat0 = np.sum(var_list0)/(n0**2)
+            varhat = varhat1 + varhat0
 
         var_list_overall = ((weights*y)-mu)**2
         varhat_overall = np.sum(var_list_overall)/(n**2)
 
-        return (mu1, mu0, est, varhat, mu, varhat_overall)
+        if not treatment == 'none':
+            return (mu1, mu0, est, varhat, mu, varhat_overall)
+
+        return (mu, varhat_overall)
     
-    return (mu1, mu0, est, mu)
+    if not treatment == 'none':
+        return (mu1, mu0, est, mu)
+    
+    return mu
 
 gc.collect()
 torch.cuda.empty_cache()
@@ -359,33 +378,69 @@ elif args.method == 'clf':
                         df_t.shape[0]/(df.shape[0]+df_t.shape[0])])
 
 
+# if args.validate:
+#     mu_r = np.mean(df[args.outcome].values)
+#     mu_t = np.mean(df_t[args.outcome].values)
+#     if args.treatment == ['none']:
+#         headers = ['$\hat{\mu}(P_{R \\rightarrow T})$', '$\hat{\mu}(P_R)$', '$\hat{\mu}(P_T)$']
+#     else:
+#         headers = ['$\hat{\\tau}_{R \\rightarrow T}$', '$\hat{\\tau}_R$', '$\hat{\\tau}_T$', '$\hat{\mu}(P_{R \\rightarrow T})$', '$\hat{\mu}(P_R)$', '$\hat{\mu}(P_T)$']
+#     if args.ci:
+#         # headers += ['95\% CI ($\hat{\mu}(P_{R \\rightarrow T})$)', '95\% CI ($\hat{\mu}(P_R)$)', '95\% CI ($\hat{\mu}(P_T)$)']
+#         if args.treatment == ['none']:
+#             mu, varhat_overall = get_estimate(args.treatment)
+#         else:
+#             mu1, mu0, varhat, mu, varhat_overall = get_estimate(args.treatment)
+
+#         varhat_overall_r = np.sum((df[args.outcome].values-np.mean(df[args.outcome].values))**2)/(df.shape[0]**2)
+#         varhat_overall_t = np.sum((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))**2)/(df_t.shape[0]**2)
+#     else:
+#         if args.treatment == ['none']:
+#             mu = get_estimate(args.treatment)
+#         else:
+#             mu1, mu0, est, mu = get_estimate(args.treatment)
+#     rows = [['Outcome', '{:.3f}'.format(mu), '{:.3f}'.format(mu_r), '{:.3f}'.format(mu_t)]]
+#     if args.ci:
+#         rows[0] += ['[{:.3f}, {:.3f}]'.format(mu-1.96*np.sqrt(varhat_overall), mu+1.96*np.sqrt(varhat_overall)),
+#                     '[{:.3f}, {:.3f}]'.format(mu_r-1.96*np.sqrt(varhat_overall_r), mu_r+1.96*np.sqrt(varhat_overall_r)),
+#                     '[{:.3f}, {:.3f}]'.format(mu_t-1.96*np.sqrt(varhat_overall_t), mu_t+1.96*np.sqrt(varhat_overall_t))]
+
+
+headers = []
+headers2 = []
+
+if args.treatment != ['none']:
+    headers += ['$\hat{\\tau}_{R \\rightarrow T}$']
 if args.validate:
-    
-    headers = ['$\hat{\mu}(P_{R \\rightarrow T})$', '$\hat{\mu}(P_R)$', '$\hat{\mu}(P_T)$']
+    if args.treatment != ['none']:
+        headers += ['$\hat{\\tau}_R$', '$\hat{\\tau}_T$']
+    headers2 += ['$\hat{\mu}(P_{R \\rightarrow T})$', '$\hat{\mu}(P_R)$', '$\hat{\mu}(P_T)$']
+if args.output_outcomes:
+    headers = ['$\hat{\mu}(P_1)$', '$\hat{\mu}(P_0)$'] + headers
+
+headers = ['Treatment'] + headers
+
+# if not args.validate:
+#     headers = ['$\hat{\\tau}_{R \\rightarrow T}$']
+#     if args.output_outcomes:
+#         headers = ['$\hat{\mu}(P_1)$', '$\hat{\mu}(P_0)$']
+#     else:
+#         headers = ['$\hat{\\tau}$']
+# else:
+#     if args.treatment != ['none']:
+#         headers = ['$\hat{\\tau}_{R \\rightarrow T}$', '$\hat{\\tau}_R$', '$\hat{\\tau}_T$']
+#     headers += ['$\hat{\mu}(P_{R \\rightarrow T})$', '$\hat{\mu}(P_R)$', '$\hat{\mu}(P_T)$']
+# if args.ci:
+#     headers += ['95\% CI ($\hat{\\tau}$)']
+
+if args.validate:
     mu_r = np.mean(df[args.outcome].values)
     mu_t = np.mean(df_t[args.outcome].values)
     if args.ci:
-        headers += ['95\% CI ($\hat{\mu}(P_{R \\rightarrow T})$)', '95\% CI ($\hat{\mu}(P_R)$)', '95\% CI ($\hat{\mu}(P_T)$)']
-        mu1, mu0, est, varhat, mu, varhat_overall = get_estimate(args.estimate, args.method, args.treatment, args.ci)
-        varhat_r = np.sum((df[args.outcome].values-np.mean(df[args.outcome].values))**2)/(df.shape[0]**2)
-        varhat_t = np.sum((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))**2)/(df_t.shape[0]**2)
-    else:
-        mu1, mu0, est, mu = get_estimate(args.estimate, args.method, args.treatment, args.ci)
-    rows = [['Outcome', '{:.3f}'.format(mu), '{:.3f}'.format(mu_r), '{:.3f}'.format(mu_t)]]
-    if args.ci:
-        rows[0] += ['[{:.3f}, {:.3f}]'.format(mu-1.96*np.sqrt(varhat_overall), mu+1.96*np.sqrt(varhat_overall)),
-                    '[{:.3f}, {:.3f}]'.format(mu_r-1.96*np.sqrt(varhat_r), mu_r+1.96*np.sqrt(varhat_r)),
-                    '[{:.3f}, {:.3f}]'.format(mu_t-1.96*np.sqrt(varhat_t), mu_t+1.96*np.sqrt(varhat_t))]
+        varhat_overall_r = np.sum((df[args.outcome].values-np.mean(df[args.outcome].values))**2)/(df.shape[0]**2)
+        varhat_overall_t = np.sum((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))**2)/(df_t.shape[0]**2)
 
-else:
-    headers = []
-    if args.output_outcomes:
-        headers = ['$\hat{\mu}(P_1)$', '$\hat{\mu}(P_0)$', '$\hat{\\tau}$']
-    else:
-        headers = ['$\hat{\\tau}$']
-    if args.ci:
-        headers += ['95\% CI ($\hat{\\tau}$)']
-
+if args.treatment != ['none']:
     if args.treatment == ['all']:
         treatments = ['treatycommit', 'brave', 'evil', 'flag', 'threat', 'economy', 'treatyviolation']
         treatment_names = ['Commitment', 'Bravery', 'Mistreatment', 'Flags', 'Threat', 'Economy', 'Violation']
@@ -398,19 +453,63 @@ else:
         varhats = []
     for i in range(len(treatments)):
         treatment = treatments[i]
+        a = df[treatment].values.flatten()
+        n1 = np.sum(a)
+        n0 = np.sum(1-a)
+        if args.validate:
+            a_t = df_t[treatment].values.flatten()
+            n1_t = np.sum(a_t)
+            n0_t = np.sum(1-a_t)
         if args.ci:
-            mu1, mu0, est, varhat, mu, varhat_overall = get_estimate(args.estimate, args.method, treatment, args.ci)
+            mu1, mu0, est, varhat, mu, varhat_overall = get_estimate(treatment)
             estimates.append(est)
             varhats.append(varhat)
         else:
-            mu1, mu0, est, mu = get_estimate(args.estimate, args.method, treatment, args.ci)
+            mu1, mu0, est, mu = get_estimate(treatment)
             estimates.append(est)
-        if args.output_outcomes:
-            row = [treatment_names[i], '{:.3f}'.format(mu1), '{:.3f}'.format(mu0), '{:.3f}'.format(est)]
-        else:
-            row = [treatment_names[i], '{:.3f}'.format(est)]
+        if args.validate:
+            tau_r = np.mean(df[args.outcome].values[a==1]) - np.mean(df[args.outcome].values[a==0])
+            tau_t = np.mean(df_t[args.outcome].values[a_t==1]) - np.mean(df_t[args.outcome].values[a_t==0])
+            if args.ci:
+                varhat_r = np.sum(((df[args.outcome].values-np.mean(df[args.outcome].values))[a==1])**2)/(n1**2) + np.sum(((df[args.outcome].values-np.mean(df[args.outcome].values))[a==0])**2)/(n0**2)
+                varhat_t = np.sum(((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))[a_t==1])**2)/(n1_t**2) + np.sum(((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))[a_t==0])**2)/(n0_t**2)
+        
         if args.ci:
-            row += ['[{:.3f}, {:.3f}]'.format(est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
+            row = ['{:.3f} [{:.3f}, {:.3f}]'.format(est, est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
+        else:
+            row = ['{:.3f}'.format(est)]
+        if args.output_outcomes:
+            row = ['{:.3f} '.format(mu1), '{:.3f}'.format(mu0)] + row
+        
+        row = [treatment_names[i]] + row
+        if args.validate:
+            if args.ci:
+                row += ['{:.3f} [{:.3f}, {:.3f}]'.format(tau_r, tau_r-1.96*np.sqrt(varhat_r), tau_r+1.96*np.sqrt(varhat_r)), 
+                        '{:.3f} [{:.3f}, {:.3f}]'.format(tau_t, tau_t-1.96*np.sqrt(varhat_t), tau_t+1.96*np.sqrt(varhat_t))]   
+            else:
+                row += ['{:.3f}'.format(tau_r), '{:.3f}'.format(tau_t)]
+    
         rows.append(row)
+else:
+    if args.ci:
+        mu, varhat_overall = get_estimate(args.treatment[0])
+    else:
+        mu = get_estimate(args.treatment[0])
+    # else:
+    # if args.ci:
+    #     rows[0] += ['[{:.3f}, {:.3f}]'.format(mu-1.96*np.sqrt(varhat_overall), mu+1.96*np.sqrt(varhat_overall)),
+    #                 '[{:.3f}, {:.3f}]'.format(mu_r-1.96*np.sqrt(varhat_overall_r), mu_r+1.96*np.sqrt(varhat_overall_r)),
+    #                 '[{:.3f}, {:.3f}]'.format(mu_t-1.96*np.sqrt(varhat_overall_t), mu_t+1.96*np.sqrt(varhat_overall_t))]
 
 print(tabulate(rows, headers=headers, tablefmt='latex_raw'))
+
+if args.validate:
+    if args.ci:
+        rows2 = [['Outcome', 
+                '{:.3f} [{:.3f}, {:.3f}]'.format(mu, mu-1.96*np.sqrt(varhat_overall), mu+1.96*np.sqrt(varhat_overall)), 
+                '{:.3f} [{:.3f}, {:.3f}]'.format(mu_r, mu_r-1.96*np.sqrt(varhat_overall_r), mu_r+1.96*np.sqrt(varhat_overall_r)), 
+                '{:.3f} [{:.3f}, {:.3f}]'.format(mu_t, mu_t-1.96*np.sqrt(varhat_overall_t), mu_t+1.96*np.sqrt(varhat_overall_t))]]
+    else:
+        rows2 = [['Outcome', '{:.3f}'.format(mu), '{:.3f}'.format(mu_r), '{:.3f}'.format(mu_t)]]
+
+    print(tabulate(rows2, headers=headers2, tablefmt='latex_raw'))

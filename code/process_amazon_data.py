@@ -1,42 +1,32 @@
 import pandas as pd
-import numpy as np
-from empath import Empath
-import liwc
-import argparse
+import json
+import gzip
 import pdb
-from utils import get_liwc_labels, get_empath_labels
 from tqdm import tqdm
-tqdm.pandas()
 
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--lexicon', type=str, default='liwc')
-    args = parser.parse_args()
+def parse(path):
+  g = gzip.open(path, 'rb')
+  for l in g:
+    yield json.loads(l)
 
-    return args
+def getDF(path):
+  i = 0
+  df = {}
+  for d in parse(path):
+    df[i] = d
+    i += 1
+  return pd.DataFrame.from_dict(df, orient='index')
 
-args = get_args()
+music_df = getDF('/home/victorialin/Documents/2022-2023/causal_text/data/amazon_synthetic/Musical_Instruments_5.json.gz')
+music_df = music_df[~music_df['vote'].isna()][['reviewText', 'vote']]
+music_df['vote'] = music_df['vote'].str.replace(',', '').astype(int)
+music_df.dropna(inplace=True)
+music_df.rename(columns={'vote': 'helpful'}, inplace=True)
+music_df.to_csv('/home/victorialin/Documents/2022-2023/causal_text/data/amazon_synthetic/music_reviews_raw.csv', index=False)
 
-df = pd.read_csv('../data/amazon_synthetic/music_preprocessed.tsv', sep='\t', index_col=0)
-
-if args.lexicon == 'liwc':
-    parse, category_names = liwc.load_token_parser('/home/victorialin/Documents/liwc_dict/LIWC2015_English_Flat.dic')
-    df['label_count'] = df['text'].progress_apply(get_liwc_labels, args=(category_names, parse, True))
-
-elif args.lexicon == 'empath':
-    lexicon = Empath()
-    category_names = list(lexicon.cats.keys())
-    df['label_count'] = df['text'].progress_apply(get_empath_labels, args=(lexicon, ))
-
-count_df = pd.DataFrame(np.stack(df['label_count'].values, axis=0), columns=category_names)
-if args.lexicon == 'empath':
-    count_df[count_df[category_names] > 1] = 1
-
-count_df['text'] = df['text']
-count_df['Y'] = df['Y']
-
-count_df0 = count_df[df['C']==0]
-count_df1 = count_df[df['C']==1]
-
-count_df0.to_csv('../data/amazon_synthetic/music_{}_c0.csv'.format(args.lexicon), index=False)
-count_df1.to_csv('../data/amazon_synthetic/music_{}_c1.csv'.format(args.lexicon), index=False)
+office_df = getDF('/home/victorialin/Documents/2022-2023/causal_text/data/amazon_synthetic/Office_Products_5.json.gz')
+office_df = office_df[~office_df['vote'].isna()][['reviewText', 'vote']]
+office_df['vote'] = office_df['vote'].str.replace(',', '').astype(int)
+office_df.dropna(inplace=True)
+office_df.rename(columns={'vote': 'helpful'}, inplace=True)
+office_df.to_csv('/home/victorialin/Documents/2022-2023/causal_text/data/amazon_synthetic/office_reviews_raw.csv', index=False)
