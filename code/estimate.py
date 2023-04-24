@@ -14,6 +14,7 @@ from sklearn.linear_model import LogisticRegressionCV, LinearRegression, Elastic
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVR
 from nltk import tokenize
 from tqdm import tqdm
 from functools import partial
@@ -30,7 +31,7 @@ def get_args():
     parser.add_argument('--data-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/data/hk/')
     parser.add_argument('--random-csv', type=str, default='HKRepData_textfull.csv')
     parser.add_argument('--target-csv', type=str, default='target_corpus_fullprobs.csv')
-    parser.add_argument('--method', type=str, default='clf')
+    parser.add_argument('--method', type=str, default='clm')
     parser.add_argument('--representation', type=str, default='embedding')
     parser.add_argument('--seed', type=int, default=230224)
     parser.add_argument('--treatment', type=str, nargs='+', default=['treatycommit'])
@@ -44,6 +45,7 @@ def get_args():
     parser.add_argument('--lm-name', type=str, default='gpt2')
     parser.add_argument('--lm-library', type=str, default='transformers')
     parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--train-size', type=float, default=0.1)
     parser.add_argument('--marginal-probs', action='store_true')
     parser.add_argument('--ci', action='store_true')
     parser.add_argument('--scale', action='store_true')
@@ -109,8 +111,6 @@ def get_var_clf(idx, df, weights, y_mean, args):
     j = idx[1]
     d_xi = weights[i]
     d_xj = weights[j]
-    # yi = df[args.outcome].values[i] - y_mean
-    # yj = df[args.outcome].values[j] - y_mean
     yi = df[args.outcome].values[i]
     yj = df[args.outcome].values[j]
     if i != j:
@@ -124,8 +124,6 @@ def get_var_lm(idx, df, weights, y_mean, args):
     j = idx[1]
     p_xi = weights[i]
     p_xj = weights[j]
-    # yi = df[args.outcome].values[i] - y_mean
-    # yj = df[args.outcome].values[j] - y_mean
     yi = df[args.outcome].values[i]
     yj = df[args.outcome].values[j]
     if i != j:
@@ -135,8 +133,6 @@ def get_var_lm(idx, df, weights, y_mean, args):
     return val
 
 def get_estimate(treatment='a'):
-
-    # pdb.set_trace()
 
     y = df[args.outcome].values.flatten()
     n = df.shape[0]
@@ -181,6 +177,10 @@ def get_estimate(treatment='a'):
             mu1_model = ElasticNet(l1_ratio=0.5, max_iter=10000)
             mu0_model = ElasticNet(l1_ratio=0.5, max_iter=10000)
             mu_model = ElasticNet(l1_ratio=0.5, max_iter=10000)
+        elif args.outcome_model == 'svm':
+            mu1_model = SVR()
+            mu0_model = SVR()
+            mu_model = SVR()
         
         if not treatment == 'none':
             a_train = df_random_train[treatment].values.flatten()
@@ -188,16 +188,22 @@ def get_estimate(treatment='a'):
             mu0_model.fit(train_embeds[a_train==0], df_random_train[a_train==0][args.outcome].values.flatten())
             mu1 = np.sum((weights1*(y-mu1_model.predict(embeds_r)))[a==1])/n1 + np.mean(mu1_model.predict(embeds_t))
             mu0 = np.sum((weights0*(y-mu0_model.predict(embeds_r)))[a==0])/n0 + np.mean(mu0_model.predict(embeds_t))
-            
+            print('mu1 model accuracy: {:.3f}'.format(mu1_model.score(embeds_r[a==1], y[a==1])))
+            print('mu0 model accuracy: {:.3f}'.format(mu0_model.score(embeds_r[a==0], y[a==0])))
+
         mu_model.fit(train_embeds, df_random_train[args.outcome].values.flatten())
         mu = np.sum(weights*(y-mu_model.predict(embeds_r)))/n + np.mean(mu_model.predict(embeds_t))
+        print('mu model accuracy: {:.3f}'.format(mu_model.score(embeds_r), y))
 
     if not treatment == 'none':
         est = mu1 - mu0
 
     if args.ci:
         if not treatment == 'none':
-            var_list1 = ((weights1*y)[a==1]-mu1)**2
+            if args.estimate == 'diff':
+                var_list1 = ((weights1*y)[a==1]-mu1)**2
+            elif args.estimate == 'dr':
+                var_list1 = (((weights1*y)-mu1_model.predict(embeds_r))[a==1])**2
             # idxs1 = list(itertools.product(df_random_test[df_random_test[args.treatment]==1].index, df_random_test[df_random_test[args.treatment]==1].index))
             # var_list1 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights1, 
             #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
@@ -205,11 +211,17 @@ def get_estimate(treatment='a'):
             # idxs0 = list(itertools.product(df_random_test[df_random_test[args.treatment]==0].index, df_random_test[df_random_test[args.treatment]==0].index))
             # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
             #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
-            var_list0 = ((weights0*y)[a==0]-mu0)**2
+            if args.estimate == 'diff':
+                var_list0 = ((weights0*y)[a==0]-mu0)**2
+            elif args.estimate == 'dr':
+                var_list0 = (((weights0*y)-mu0_model.predict(embeds_r))[a==0])**2
             varhat0 = np.sum(var_list0)/(n0**2)
             varhat = varhat1 + varhat0
 
-        var_list_overall = ((weights*y)-mu)**2
+        if args.estimate == 'diff':
+            var_list_overall = ((weights*y)-mu)**2
+        elif args.estimate == 'dr':
+            var_list_overall = ((weights*y)-mu_model.predict(embeds_r))**2
         varhat_overall = np.sum(var_list_overall)/(n**2)
 
         if not treatment == 'none':
@@ -244,11 +256,12 @@ sentences = np.hstack([df_random[args.text_col].values, df_target[args.text_col]
 labels = np.array([0]*df_random.shape[0] + [1]*df_target.shape[0])
 sentences, labels = shuffle(sentences, labels, random_state=args.seed)
 if args.method == 'clf':
-
+    y_train, y_test, sentence_train, sentence_test = train_test_split(labels, sentences, train_size=args.train_size, random_state=args.seed)
     if args.lm_library == 'sentence-transformers':
         model = SentenceTransformer(args.lm_name)
         model.to(device)
-        embeds = model.encode(sentences, show_progress_bar=True)
+        # embeds = model.encode(sentences, show_progress_bar=True)
+        X_train = model.encode(sentence_train, show_progress_bar=True)
 
     elif args.lm_library == 'transformers':
         tokenizer = AutoTokenizer.from_pretrained(args.lm_name, max_length=512, truncation=True)
@@ -257,12 +270,13 @@ if args.method == 'clf':
         if 'Masked' not in model.config.architectures[0]:
             tokenizer.pad_token = tokenizer.eos_token
         
-        embeds = get_embeds(sentences.astype(str).tolist(), tokenizer, model, device)
+        # embeds = get_embeds(sentences.astype(str).tolist(), tokenizer, model, device)
+        X_train = get_embeds(sentence_train.astype(str).tolist(), tokenizer, model, device)
 
-    X_train, X_test, y_train, y_test, sentence_train, sentence_test = train_test_split(embeds, labels, sentences, test_size=0.9, random_state=args.seed)
-
+    # X_train, X_test, y_train, y_test, sentence_train, sentence_test = train_test_split(embeds, labels, sentences, train_size=args.train_size, random_state=args.seed)
+    # pdb.set_trace
 else:
-    sentence_train, sentence_test = train_test_split(sentences, test_size=0.9, random_state=args.seed)
+    sentence_train, sentence_test = train_test_split(sentences, train_size=args.train_size, random_state=args.seed)
 
 train_df = pd.DataFrame({args.text_col: sentence_train})
 test_df = pd.DataFrame({args.text_col: sentence_test})
@@ -356,7 +370,6 @@ elif args.method == 'clf':
         clf.fit(scaler.transform(X_train), y_train)
     else:
         clf.fit(X_train, y_train)
-
     if args.marginal_probs:
         prob_list = []
         for sent_group in tqdm(df[args.text_col].values):
@@ -373,38 +386,9 @@ elif args.method == 'clf':
             probs = clf.predict_proba(scaler.transform(test_embeds))
         else:
             probs = clf.predict_proba(test_embeds)
-
+            print('clf accuracy: {:.3f}'.format(clf.score(test_embeds, [0]*test_embeds.shape[0])))
     corp_prob = np.array([df.shape[0]/(df.shape[0]+df_t.shape[0]), 
                         df_t.shape[0]/(df.shape[0]+df_t.shape[0])])
-
-
-# if args.validate:
-#     mu_r = np.mean(df[args.outcome].values)
-#     mu_t = np.mean(df_t[args.outcome].values)
-#     if args.treatment == ['none']:
-#         headers = ['$\hat{\mu}(P_{R \\rightarrow T})$', '$\hat{\mu}(P_R)$', '$\hat{\mu}(P_T)$']
-#     else:
-#         headers = ['$\hat{\\tau}_{R \\rightarrow T}$', '$\hat{\\tau}_R$', '$\hat{\\tau}_T$', '$\hat{\mu}(P_{R \\rightarrow T})$', '$\hat{\mu}(P_R)$', '$\hat{\mu}(P_T)$']
-#     if args.ci:
-#         # headers += ['95\% CI ($\hat{\mu}(P_{R \\rightarrow T})$)', '95\% CI ($\hat{\mu}(P_R)$)', '95\% CI ($\hat{\mu}(P_T)$)']
-#         if args.treatment == ['none']:
-#             mu, varhat_overall = get_estimate(args.treatment)
-#         else:
-#             mu1, mu0, varhat, mu, varhat_overall = get_estimate(args.treatment)
-
-#         varhat_overall_r = np.sum((df[args.outcome].values-np.mean(df[args.outcome].values))**2)/(df.shape[0]**2)
-#         varhat_overall_t = np.sum((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))**2)/(df_t.shape[0]**2)
-#     else:
-#         if args.treatment == ['none']:
-#             mu = get_estimate(args.treatment)
-#         else:
-#             mu1, mu0, est, mu = get_estimate(args.treatment)
-#     rows = [['Outcome', '{:.3f}'.format(mu), '{:.3f}'.format(mu_r), '{:.3f}'.format(mu_t)]]
-#     if args.ci:
-#         rows[0] += ['[{:.3f}, {:.3f}]'.format(mu-1.96*np.sqrt(varhat_overall), mu+1.96*np.sqrt(varhat_overall)),
-#                     '[{:.3f}, {:.3f}]'.format(mu_r-1.96*np.sqrt(varhat_overall_r), mu_r+1.96*np.sqrt(varhat_overall_r)),
-#                     '[{:.3f}, {:.3f}]'.format(mu_t-1.96*np.sqrt(varhat_overall_t), mu_t+1.96*np.sqrt(varhat_overall_t))]
-
 
 headers = []
 headers2 = []
@@ -419,19 +403,6 @@ if args.output_outcomes:
     headers = ['$\hat{\mu}(P_1)$', '$\hat{\mu}(P_0)$'] + headers
 
 headers = ['Treatment'] + headers
-
-# if not args.validate:
-#     headers = ['$\hat{\\tau}_{R \\rightarrow T}$']
-#     if args.output_outcomes:
-#         headers = ['$\hat{\mu}(P_1)$', '$\hat{\mu}(P_0)$']
-#     else:
-#         headers = ['$\hat{\\tau}$']
-# else:
-#     if args.treatment != ['none']:
-#         headers = ['$\hat{\\tau}_{R \\rightarrow T}$', '$\hat{\\tau}_R$', '$\hat{\\tau}_T$']
-#     headers += ['$\hat{\mu}(P_{R \\rightarrow T})$', '$\hat{\mu}(P_R)$', '$\hat{\mu}(P_T)$']
-# if args.ci:
-#     headers += ['95\% CI ($\hat{\\tau}$)']
 
 if args.validate:
     mu_r = np.mean(df[args.outcome].values)
@@ -495,11 +466,6 @@ else:
         mu, varhat_overall = get_estimate(args.treatment[0])
     else:
         mu = get_estimate(args.treatment[0])
-    # else:
-    # if args.ci:
-    #     rows[0] += ['[{:.3f}, {:.3f}]'.format(mu-1.96*np.sqrt(varhat_overall), mu+1.96*np.sqrt(varhat_overall)),
-    #                 '[{:.3f}, {:.3f}]'.format(mu_r-1.96*np.sqrt(varhat_overall_r), mu_r+1.96*np.sqrt(varhat_overall_r)),
-    #                 '[{:.3f}, {:.3f}]'.format(mu_t-1.96*np.sqrt(varhat_overall_t), mu_t+1.96*np.sqrt(varhat_overall_t))]
 
 print(tabulate(rows, headers=headers, tablefmt='latex_raw'))
 
