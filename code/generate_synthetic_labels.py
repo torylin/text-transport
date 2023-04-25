@@ -6,14 +6,24 @@ import statsmodels.formula.api as smf
 import pdb
 import numpy as np
 import os
+import argparse
 
-combination_type = 'interaction'
-data_dir = '/home/victorialin/Documents/2022-2023/causal_text/data/amazon_synthetic/'
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-dir', type=str, default='/home/victorialin/Documents/2022-2023/causal_text/data/amazon_synthetic/')
+    parser.add_argument('--combination-type', type=str, default='predreg')
+    parser.add_argument('--lexicon-weight', type=float, default=1.0)
+    parser.add_argument('--embedding-weight', type=float, default=0.5)
+    args = parser.parse_args()
 
-df0 = pd.read_csv(os.path.join(data_dir, 'combined_liwc_categorymusic.csv'))
-df1 = pd.read_csv(os.path.join(data_dir, 'combined_liwc_categoryoffice.csv'))
-prob_df0 = pd.read_csv(os.path.join(data_dir, 'music_reviews_pred_numerical.csv'))
-prob_df1 = pd.read_csv(os.path.join(data_dir, 'office_reviews_pred_numerical.csv'))
+    return args
+
+args = get_args()
+
+df0 = pd.read_csv(os.path.join(args.data_dir, 'combined_liwc_categorymusic.csv'))
+df1 = pd.read_csv(os.path.join(args.data_dir, 'combined_liwc_categoryoffice.csv'))
+prob_df0 = pd.read_csv(os.path.join(args.data_dir, 'music_reviews_pred_numerical.csv'))
+prob_df1 = pd.read_csv(os.path.join(args.data_dir, 'office_reviews_pred_numerical.csv'))
 
 df = pd.concat([df0, df1], axis=0)
 prob_df = pd.concat([prob_df0, prob_df1], axis=0)
@@ -37,7 +47,7 @@ mu, sigma = 0, 1
 noise0 = np.random.normal(mu, sigma, df0.shape[0])
 noise1 = np.random.normal(mu, sigma, df1.shape[0])
 
-if combination_type == 'interaction':
+if args.combination_type == 'interaction':
     X_new = df[features['feature'][0:10].values]
     X_new['pred'] = prob_df['pred']
     X_new['helpful'] = y
@@ -49,7 +59,7 @@ if combination_type == 'interaction':
     label_synth0 = preds[:df0.shape[0]] + noise0
     label_synth1 = preds[df0.shape[0]:] + noise1
     pdb.set_trace()
-elif combination_type == 'reg':
+elif args.combination_type == 'reg':
     lex_pred = (df[features['feature'][0:10].values]*features.coef[0:10].values).sum(axis=1).values
     embed_pred = prob_df['pred'].values
     X_new = pd.DataFrame({'lex_pred': lex_pred, 'embed_pred': embed_pred})
@@ -61,9 +71,10 @@ elif combination_type == 'reg':
     label_synth0 = preds[:df0.shape[0]] + noise0
     label_synth1 = preds[df0.shape[0]:] + noise1
     pdb.set_trace()
-else:
-    label_synth0 = (df0[features['feature'][0:10].values]*features.coef[0:10].values).sum(axis=1) + prob_df0['pred']*0.5 + noise0
-    label_synth1 = (df1[features['feature'][0:10].values]*features.coef[0:10].values).sum(axis=1) + prob_df1['pred']*0.5 + noise1
+
+elif args.combination_type == 'direct':
+    label_synth0 = (df0[features['feature'][0:10].values]*features.coef[0:10].values).sum(axis=1)*args.lexicon_weight + prob_df0['pred']*args.embedding_weight + noise0
+    label_synth1 = (df1[features['feature'][0:10].values]*features.coef[0:10].values).sum(axis=1)*args.lexicon_weight + prob_df1['pred']*args.embedding_weight + noise1
 # label_synth0 = df0[features['feature'][0:10].values].sum(axis=1)*2 + prob_df0['pred']*0.5 + noise0
 # label_synth1 = df1[features['feature'][0:10].values].sum(axis=1)*2 + prob_df1['pred']*0.5 + noise1
 # label_synth0 = prob_df0['pred']*0.5 + noise0
@@ -75,12 +86,12 @@ df1.drop(['helpful'], axis=1, inplace=True)
 df0['label_synthetic'] = label_synth0
 df1['label_synthetic'] = label_synth1
 
-if combination_type == 'interaction':
-    df0.to_csv(os.path.join(data_dir, 'music_reviews_label_synthetic_numerical_coef_interaction.csv'), index=False)
-    df1.to_csv(os.path.join(data_dir, 'office_reviews_label_synthetic_numerical_coef_interaction.csv'), index=False)
-elif combination_type == 'reg':
-    df0.to_csv(os.path.join(data_dir, 'music_reviews_label_synthetic_numerical_coef_predreg.csv'), index=False)
-    df1.to_csv(os.path.join(data_dir, 'office_reviews_label_synthetic_numerical_coef_predreg.csv'), index=False)
-else:
-    df0.to_csv(os.path.join(data_dir, 'music_reviews_label_synthetic_numerical_coef.csv'), index=False)
-    df1.to_csv(os.path.join(data_dir, 'office_reviews_label_synthetic_numerical_coef.csv'), index=False)
+if args.combination_type == 'interaction':
+    df0.to_csv(os.path.join(args.data_dir, 'music_reviews_label_synthetic_numerical_coef_interaction.csv'), index=False)
+    df1.to_csv(os.path.join(args.data_dir, 'office_reviews_label_synthetic_numerical_coef_interaction.csv'), index=False)
+elif args.combination_type == 'predreg':
+    df0.to_csv(os.path.join(args.data_dir, 'music_reviews_label_synthetic_numerical_coef_predreg.csv'), index=False)
+    df1.to_csv(os.path.join(args.data_dir, 'office_reviews_label_synthetic_numerical_coef_predreg.csv'), index=False)
+elif args.combination_type == 'direct':
+    df0.to_csv(os.path.join(args.data_dir, 'music_reviews_label_synthetic_numerical_coef_direct{}{}.csv'.format(args.lexicon_weight, args.embedding_weight)), index=False)
+    df1.to_csv(os.path.join(args.data_dir, 'office_reviews_label_synthetic_numerical_coef_direct{}{}.csv'.format(args.lexicon_weight, args.embedding_weight)), index=False)

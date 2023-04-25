@@ -48,7 +48,7 @@ if args.lm_type == 'mlm':
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=args.mlm_prob)
 elif args.lm_type == 'clm':
     model = AutoModelForCausalLM.from_pretrained(args.model)
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, max_length=512, padding=True, truncation=True)
     tokenizer.padding_side = 'left'
     tokenizer.pad_token = tokenizer.eos_token
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
