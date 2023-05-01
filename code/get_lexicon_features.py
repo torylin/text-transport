@@ -16,9 +16,11 @@ def get_args():
     parser.add_argument('--lexicon', type=str, default='liwc')
     parser.add_argument('--text-col', type=str, default='text')
     parser.add_argument('--outcome', type=str, default='Y')
+    parser.add_argument('--outcome-name', type=str)
     parser.add_argument('--split-var', type=str, default='C')
     parser.add_argument('--split-values', nargs='+', default=[0, 1])
     parser.add_argument('--out-path', type=str, default='music')
+    parser.add_argument('--split', action='store_true')
     args = parser.parse_args()
 
     return args
@@ -51,8 +53,12 @@ if args.lexicon == 'empath':
 count_df[args.text_col] = df[args.text_col]
 count_df[args.outcome] = df[args.outcome]
 
-count_df0 = count_df[df[args.split_var]==args.split_values[0]]
-count_df1 = count_df[df[args.split_var]==args.split_values[1]]
+if args.split:
+    count_df0 = count_df[df[args.split_var]==args.split_values[0]]
+    count_df1 = count_df[df[args.split_var]==args.split_values[1]]
 
-count_df0.to_csv(os.path.join(args.data_dir, '{}_{}_{}{}.csv'.format(args.out_path,args.lexicon, args.split_var, args.split_values[0])), index=False)
-count_df1.to_csv(os.path.join(args.data_dir, '{}_{}_{}{}.csv'.format(args.out_path,args.lexicon, args.split_var, args.split_values[1])), index=False)
+    count_df0.to_csv(os.path.join(args.data_dir, '{}_{}_{}_{}{}.csv'.format(args.out_path, args.outcome_name, args.lexicon, args.split_var, args.split_values[0])), index=False)
+    count_df1.to_csv(os.path.join(args.data_dir, '{}_{}_{}_{}{}.csv'.format(args.out_path, args.outcome_name, args.lexicon, args.split_var, args.split_values[1])), index=False)
+
+else:
+    count_df.to_csv(os.path.join(args.data_dir, '{}_{}_{}.csv'.format(args.out_path, args.outcome_name, args.lexicon)), index=False)
