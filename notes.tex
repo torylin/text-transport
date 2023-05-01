@@ -105,36 +105,77 @@ We can show that $\hat{\mu}(P^T)$ is an unbiased estimator for $\mu(P^T)$:
     &= \mu(P^T)
 \end{align*}
 
-Finally, letting $\mathcal{X}$ be the space of all texts, the variance of the estimator is given by:
+Finally, let $\mathcal{X}$ be the space of all texts, and consider the finite-sample setting where $Y_i$ is fixed (i.e., non-random) for all $i \in [n]$. Then the variance of the estimator is given by:
 \begin{align*}
-    \text{Var}[\hat{\mu}(P)] &= \text{Var}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
-    &= \text{Cov}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{1}{n} \sum_{j=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
-    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
-    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}, \sum_{x' \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}\right] \\
-    &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x), \int_{x'}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_j(x')\mathbbm{1}\{X_j=x'\}d\mathbb{P}^R(x')\right] \\
-    &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n \int_x \int_{x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
-    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
-    % &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') (P^R(x,x') - P^R(x)P^R(x'))d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
-    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \Big[\mathbb{E}[Y_i(x)Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')\Big] d\mathbb{P}^R(x)d\mathbb{P}^R(x')
+    \text{Var}[\hat{\mu}(P)|Y_i] &= \text{Var}\left[\frac{1}{n}\sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i) \right] \\
+    &= \frac{1}{n^2}\sum_{i=1}^n\text{Var}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+    &= \frac{1}{n^2}\sum_{i=1}^n\text{Cov}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\    
+    &= \frac{1}{n^2}\sum_{i=1}^n\text{Cov}\left[\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x) \mathbbm{1}\{X_i=x\}, \sum_{x' \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_i(x')\mathbbm{1}\{X_i=x'\}\right] \\
+    &= \frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\sum_{x' \in \mathcal{X}} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_i(x)Y_i(x')\text{Cov}[\mathbbm{1}\{X_i=x\},\mathbbm{1}\{X_i=x'\}] \\
+    &=\frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\sum_{x' \in \mathcal{X}} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_i(x)Y_i(x')(\mathbb{E}[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_i=x'\}]-\mathbb{E}[\mathbbm{1}\{X_i=x\}]\mathbb{E}[\mathbbm{1}\{X_i=x'\}]) \\
+    &=\frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\sum_{x' \in \mathcal{X}} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_i(x)Y_i(x')(P^R(x,x')-P^R(x)P^R(x'))
 \end{align*}
 
-where the last equality follows from
+If $x=x'$,
 \begin{align*}
-    &\text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}] \\
-    % &=
-    % \mathbb{E}[(Y_i(x)\mathbbm{1}\{X_i=x\} - \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}])(Y_j(x')\mathbbm{1}\{X_j=x'\} - \mathbb{E}[Y_j(x')\mathbbm{1}\{X_j=x'\}])] \\
-    % &= \mathbb{E}[(Y_i(x)\mathbbm{1}\{X_i=x\} - \mathbb{E}[Y_i(x)]\mathbb{E}[\mathbbm{1}\{X_i=x\}])(Y_j(x')\mathbbm{1}\{X_j=x'\} - \mathbb{E}[Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_j=x'\}])] \\
-    % &= \mathbb{E}[(Y_i(x)\mathbbm{1}\{X_i=x\} - \mathbb{E}[Y_i(x)]P^R(x))(Y_j(x')\mathbbm{1}\{X_j=x'\} - \mathbb{E}[Y_j(x')]P^R(x'))] \\
-    &= \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}Y_j(x')\mathbbm{1}\{X_j=x'\}] - \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}]\mathbb{E}[Y_j(x')\mathbbm{1}\{X_j=x'\}] \\
-    &= \mathbb{E}[Y_i(x)Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}]  - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}]\mathbb{E}[\mathbbm{1}\{X_j=x'\}] \\
-    &=\mathbb{E}[Y_i(x)Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')
+    \text{Var}[\hat{\mu}(P)|Y_i] &= \frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}^2}{d \mathbb{P}^R}(x) Y_i^2(x)(P^R(x)-P^R(x)P^R(x)) \\
+    &=\frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}^2}{d \mathbb{P}^R}(x) Y_i^2(x)P^R(x)(1-P^R(x))
 \end{align*}
 
-Assuming independence of treatments, this further reduces to
+If $x\neq x'$,
 \begin{align*}
-    \text{Var}[\hat{\mu}(P)] &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \Big[\mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')\Big] d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
-    &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')](P^R(x,x') - P^R(x)P^R(x')) d\mathbb{P}^R(x)d\mathbb{P}^R(x')
+    \text{Var}[\hat{\mu}(P)|Y_i] &=\frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\sum_{\substack{x' \in \mathcal{X} \\ x' \neq x}} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_i(x)Y_i(x')(\underbrace{P^R(x,x')}_{0}-P^R(x)P^R(x')) \\
+    &=-\frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\sum_{\substack{x' \in \mathcal{X} \\ x' \neq x}} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_i(x)Y_i(x')P^R(x)P^R(x')) \\
 \end{align*}
+
+Putting the two cases together,
+\begin{align*}
+    \text{Var}[\hat{\mu}(P)|Y_i] &= \frac{1}{n^2}\sum_{i=1}^n\Bigg(\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}^2}{d \mathbb{P}^R}(x) Y_i^2(x)P^R(x)(1-P^R(x) - \sum_{x \in \mathcal{X}}\sum_{\substack{x' \in \mathcal{X} \\ x' \neq x}} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_i(x)Y_i(x')P^R(x)P^R(x')\Bigg) \\
+    &= \frac{1}{n^2}\sum_{i=1}^n\Bigg(\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}^2}{d \mathbb{P}^R}(x) Y_i^2(x)P^R(x) - \sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}^2}{d \mathbb{P}^R}(x) Y_i^2(x)P^R(x)^2 \\
+    &- \sum_{x \in \mathcal{X}}\sum_{\substack{x' \in \mathcal{X} \\ x' \neq x}} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_i(x)Y_i(x')P^R(x)P^R(x')\Bigg) \\
+    &= \frac{1}{n^2}\sum_{i=1}^n\Bigg(\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}^2}{d \mathbb{P}^R}(x) Y_i^2(x)P^R(x) - \Bigg(\underbrace{\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}^2}{d \mathbb{P}^R}(x) Y_i^2(x)P^R(x)}_{\hat{\mu}_i=\hat{\mathbb{E}}_{x \sim P^T}[Y_i(x)]=\hat{\mathbb{E}}_{x \sim P^R}[\frac{dP^T}{dP^R}(x)Y_i(x)]}\Bigg)^2\Bigg) \\
+    &=\frac{1}{n^2}\sum_{i=1}^n\Bigg(\sum_{x \in \mathcal{X}}\Bigg(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) Y_i(x)\Bigg)^2P^R(x) -\hat{\mu}_i^2\Bigg) \\
+    &=\frac{1}{n^2}\sum_{i=1}^n\Bigg(\sum_{x \in \mathcal{X}}\Bigg(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) Y_i(x) - \hat{\mu}_i \Bigg)^2P^R(x) + 2\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)\hat{\mu}_i Y_i(x)P^R(x) - \sum_{x \in \mathcal{X}}\hat{\mu}_i^2P^R(x) - \hat{\mu}_i^2\Bigg) \\
+    &=\frac{1}{n^2}\sum_{i=1}^n\Bigg(\sum_{x \in \mathcal{X}}\Bigg(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) Y_i(x) - \hat{\mu}_i \Bigg)^2P^R(x) + \hat{\mu}_i\Bigg(2\underbrace{\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) Y_i(x)P^R(x)}_{\hat{\mu}_i} - \hat{\mu}_i\underbrace{\sum_{x \in \mathcal{X}}P^R(x)}_{1} - \hat{\mu}_i\Bigg)\Bigg) \\
+    &=\frac{1}{n^2}\sum_{i=1}^n\Bigg(\sum_{x \in \mathcal{X}}\Bigg(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) Y_i(x) - \hat{\mu}_i \Bigg)^2P^R(x) + \hat{\mu}_i(\underbrace{2\hat{\mu}_i-\hat{\mu}_i-\hat{\mu}_i}_{0})\Bigg) \\
+    &=\frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\Bigg(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) Y_i(x) - \hat{\mu}_i \Bigg)^2P^R(x)
+\end{align*}
+
+Then finally, letting $\hat{\mu}=\hat{\mathbb{E}}_{x \sim P^T}\left[\frac{1}{n}\sum_{i=1}^nY_i(x)\right]=\hat{\mathbb{E}}_{x \sim P^R}\left[\frac{1}{n}\sum_{i=1}^n\frac{dP^T}{dP^R}(x)Y_i(x)\right]$, we have
+\begin{align*}
+    \text{Var}[\hat{\mu}(P)] &= \mathbb{E}_Y[\text{Var}[\hat{\mu}(P)|Y_i]] \\
+    &=\mathbb{E}_Y\left[\frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\Bigg(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) Y_i(x) - \hat{\mu}_i \Bigg)^2P^R(x)\right] \\
+    &=\frac{1}{n^2}\sum_{i=1}^n\sum_{x \in \mathcal{X}}\Bigg(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x) Y_i(x) - \hat{\mu} \Bigg)^2P^R(x)
+\end{align*}
+% \begin{align*}
+%     \text{Var}[\hat{\mu}(P)] &= \text{Var}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
+%     &= \text{Cov}\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{1}{n} \sum_{j=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
+%     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i), \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\right] \\
+%     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\sum_{x \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\mathbbm{1}\{X_i = x\}, \sum_{x' \in \mathcal{X}}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_j(X_j)\mathbbm{1}\{X_j=x'\}\right] \\
+%     &= \frac{1}{n^2}\sum_{i=1}^n \sum_{j=1}^n \text{Cov}\left[\int_x\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x)Y_i(x)\mathbbm{1}\{X_i = x\}d\mathbb{P}^R(x), \int_{x'}\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(x')Y_j(x')\mathbbm{1}\{X_j=x'\}d\mathbb{P}^R(x')\right] \\
+%     &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n \int_x \int_{x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+%     &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}]d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+%     % &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x')Y_i(x)Y_j(x') (P^R(x,x') - P^R(x)P^R(x'))d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+%     &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \Big[\mathbb{E}[Y_i(x)Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')\Big] d\mathbb{P}^R(x)d\mathbb{P}^R(x')
+% \end{align*}
+
+% where the last equality follows from
+% \begin{align*}
+%     &\text{Cov}[Y_i(x)\mathbbm{1}\{X_i=x\}, Y_j(x')\mathbbm{1}\{X_i=x'\}] \\
+%     % &=
+%     % \mathbb{E}[(Y_i(x)\mathbbm{1}\{X_i=x\} - \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}])(Y_j(x')\mathbbm{1}\{X_j=x'\} - \mathbb{E}[Y_j(x')\mathbbm{1}\{X_j=x'\}])] \\
+%     % &= \mathbb{E}[(Y_i(x)\mathbbm{1}\{X_i=x\} - \mathbb{E}[Y_i(x)]\mathbb{E}[\mathbbm{1}\{X_i=x\}])(Y_j(x')\mathbbm{1}\{X_j=x'\} - \mathbb{E}[Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_j=x'\}])] \\
+%     % &= \mathbb{E}[(Y_i(x)\mathbbm{1}\{X_i=x\} - \mathbb{E}[Y_i(x)]P^R(x))(Y_j(x')\mathbbm{1}\{X_j=x'\} - \mathbb{E}[Y_j(x')]P^R(x'))] \\
+%     &= \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}Y_j(x')\mathbbm{1}\{X_j=x'\}] - \mathbb{E}[Y_i(x)\mathbbm{1}\{X_i=x\}]\mathbb{E}[Y_j(x')\mathbbm{1}\{X_j=x'\}] \\
+%     &= \mathbb{E}[Y_i(x)Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}\mathbbm{1}\{X_j=x'\}]  - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]\mathbb{E}[\mathbbm{1}\{X_i=x\}]\mathbb{E}[\mathbbm{1}\{X_j=x'\}] \\
+%     &=\mathbb{E}[Y_i(x)Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')
+% \end{align*}
+
+% Assuming independence of treatments, this further reduces to
+% \begin{align*}
+%     \text{Var}[\hat{\mu}(P)] &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \Big[\mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x,x') - \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')]P^R(x)P^R(x')\Big] d\mathbb{P}^R(x)d\mathbb{P}^R(x') \\
+%     &= \frac{1}{n^2} \sum_{i,j \in [n]} \iint_{x, x'} \frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x)\frac{d \mathbb{P}^T}{d \mathbb{P}^R}(x') \mathbb{E}[Y_i(x)]\mathbb{E}[Y_j(x')](P^R(x,x') - P^R(x)P^R(x')) d\mathbb{P}^R(x)d\mathbb{P}^R(x')
+% \end{align*}
 
 % \begin{align*}
 %     \text{Var}[\hat{\mu}(P)] &= \text{Var}_X\left[\frac{1}{n} \sum_{i=1}^n \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)\right] \\
@@ -158,17 +199,10 @@ With the central limit theorem (CLT), we establish asymptotic normality:
     \frac{\hat{\mu}(P) - \mu(P)}{\sqrt{\text{Var}[\hat{\mu}(P)]}}\rightarrow N(0,1)
 \end{equation*}
 
-which we can use to estimate confidence intervals using the following unbiased estimate for the variance.
-\begin{equation*}
-    \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i,j \in [n]} \frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_j)Y_i(X_i)Y_j(X_j)\frac{P^R(X_i,X_j) - P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
-\end{equation*}
+which we can use to estimate confidence intervals using the following unbiased variance estimate:
 
-In our experimental setting, the variance is 0 unless $i=j$, in which case
-$$\frac{P^R(X_i,X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_i)} = \frac{P^R(X_i)-P^R(X_i)P^R(X_j)}{P^R(X_i)} = 1-P^R(X_j)$$
-
-Consequently, we have
 \begin{equation*}
-    \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i \in [n]} \left(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)\right)^2 (Y_i(X_i))^2 (1-P^R(X_i))
+    \widehat{\text{Var}}[\hat{\mu}(P)] = \frac{1}{n^2} \sum_{i \in [n]} \left(\frac{\hat{d \mathbb{P}^T}}{d \mathbb{P}^R}(X_i)Y_i(X_i)-\hat{\mu_i}\right)^2
 \end{equation*}
 
 % $$\widehat{\text{Var}}[\hat{\mu}(P)] =\frac{1}{|D_1|(|D_1|-1)} \sum_{i \in D_1} \gamma_i^2(Y_i-\overline{Y}_{D_1})^2 + \frac{1}{|D_0|(|D_0|-1)} \sum_{j \in D_0} \gamma_j^2(Y_j-\overline{Y}_{D_0})^2$$
@@ -273,7 +307,7 @@ We estimate the overall quantity of interest $\hat{\tau}$ through the following 
     % \end{equation*}
 
     \begin{equation*}
-        \widehat{\text{Var}}[\hat{\mu}(P_1)] = \frac{1}{|D_1|^2} \sum_{i,j \in D_1} \hat{\gamma}_i \hat{\gamma}_j Y_iY_j \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
+        \widehat{\text{Var}}[\hat{\mu}(P_1)] = \frac{1}{|D_1|^2} \sum_{i \in D_1} (\hat{\gamma}_i Y_i-\hat{\mu}(P_1))^2
     \end{equation*}
     
     % \begin{equation*}
@@ -281,7 +315,7 @@ We estimate the overall quantity of interest $\hat{\tau}$ through the following 
     % \end{equation*}
 
     \begin{equation*}
-        \widehat{\text{Var}}[\hat{\mu}(P_0)] = \frac{1}{|D_0|^2} \sum_{i,j \in D_0} \hat{\gamma}_i \hat{\gamma}_j Y_iY_j \frac{P^R(X_i,X_j)-P^R(X_i)P^R(X_j)}{P^R(X_i,X_j)}
+        \widehat{\text{Var}}[\hat{\mu}(P_0)] = \frac{1}{|D_0|^2} \sum_{i \in D_0} (\hat{\gamma}_i Y_i-\hat{\mu}(P_0))^2
     \end{equation*}
 
     \vl{Not totally sure about this, but I thought we would have to subtract out the mean $Y$ so that the variance doesn't blow up with large $Y$?}
@@ -354,11 +388,27 @@ Our target corpus $P^T$ is derived from the U.S. Congressional speeches on the H
 
 \subsubsection{Amazon music reviews}
 
-This dataset from \cite{przyant2021causal} contains Amazon reviews of music purchases, with a synthetic label that is a function of (1) the rating of the review and (2) the media format of the music (CD or digital). This dataset can be considered ``randomized,'' which makes it suitable for use as $P^R$; however, by splitting the dataset according to media format, we can also treat one split as $P^R$ and the other as $P^T$. Then, since both splits are randomized, an effect transported from $P^R$ to $P^T$ can be validated against an effect estimated directly from $P^T$. We parametrize the text to obtain interpretable $g(X), h(X)$ using the LIWC and Empath lexicons.
+This dataset from \cite{przyant2021causal} contains Amazon reviews of music purchases, with a synthetic outcome $Y$ that is a function of (1) the rating of the review and (2) the media format of the music (CD or digital). This dataset can be considered ``randomized,'' which makes it suitable for use as $P^R$; however, by splitting the dataset according to media format, we can also treat one split as $P^R$ and the other as $P^T$. Then, since both splits are randomized, an effect transported from $P^R$ to $P^T$ can be validated against an effect estimated directly from $P^T$. We parametrize the text to obtain interpretable $g(X), h(X)$ using the LIWC and Empath lexicons.
 
 \subsubsection{Amazon reviews}
 
-This dataset contains Amazon reviews of musical instruments and office products, with a synthetic label that is a noisy function of the text embeddings and LIWC categories. As with the Amazon music reviews dataset, this dataset can be used for validation. $P^R$ and $P^T$ are obtained by splitting on the product category of the review.
+This dataset contains Amazon reviews of musical instruments and office products, with a synthetic label (i.e., outcome $Y$) that is a noisy function of the text embeddings (from pre-trained DistilBERT) and LIWC categories. Specifically, we combine helpfulness predictions from a linear model fit on the top 10 most predictive LIWC categories and helpfulness predictions from fine-tuned DistilBERT (plus Gaussian noise). We generate three variants of the synthetic label:
+\begin{itemize}
+    \item \textbf{Direct combination}: The lexical component and the language model component are combined through an arbitrary ratio (in our case, $\text{lexical} + 0.5*\text{LM}$), then noised.
+    \item \textbf{Regression combination}: An additional linear model is trained over the lexical and language model predictions, with helpfulness as the label. The predictions from this additional linear model are then noised.
+    \item \textbf{Interaction}: A linear model is trained over all LIWC categories, the language model predictions, and the interactions between the LIWC categories and the language model predictions. The predictions from this interaction model are then noised.
+\end{itemize}
+
+As with the Amazon music reviews dataset, this dataset can be used for validation. $P^R$ and $P^T$ are obtained by splitting on the product category of the review. Again, we parameterize the text to obtain interpretable $g(X), h(X)$ using LIWC and Empath.
+
+\subsubsection{EmoBank}
+\label{sec:emobank_data_description}
+
+This dataset from \cite{buechel2017emobank} contains English sentences that have been annotated for valence (negative vs. positive), arousal (calm vs. excited), and dominance (being controlled vs. in control), both with respect to the \textit{writer's intent} and the \textit{reader's perception}. Because these annotations are crowdsourced, the dataset can be considered randomized (as annotators are randomly assigned to read and react to texts via the crowdsourcing platform).
+
+We split the dataset according to the \textit{writer's} intended valence. For one split, which we consider $P^R$, we sample rows with high writer-intended valence (i.e., $>3$) with high probability and sample rows with low writer-intended valence (i.e., $<3$) with low probability. For the other split, which we consider $P^T$, we do the opposite. We then use the \textit{reader's} perceived valence as the outcome $Y$.
+
+Because both $P^R$ and $P^T$ are randomized, we can use them for validation. Again, we parameterize the text to obtain interpretable $g(X), h(X)$ using LIWC and Empath.
 
 \subsection{Results}
 
@@ -381,7 +431,7 @@ We report our treatment effect estimates using the classification approach descr
         Violation & 70.729 & 70.731 & \textcolor{red!80!black}{-0.001} & [-8.301, 8.299] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet.}
+    \caption{(HK) Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet.}
     \label{tab:results_clf_mpnet}
 \end{table}
 
@@ -428,7 +478,7 @@ We report our treatment effect estimates using the language modeling approach de
         Violation & 71.025 & 70.013 & \textcolor{green!50!black}{1.011} & [-4.911, 5.246] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2.}
+    \caption{(HK) Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2.}
     \label{tab:results_clm_gpt2}
 \end{table}
 
@@ -448,7 +498,7 @@ We report our treatment effect estimates using the language modeling approach de
         Violation & 71.11 & 70.077 & \textcolor{green!50!black}{1.033} & [-3.913, 5.979] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
+    \caption{(HK) Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
     \label{tab:results_clm_gpt2_finetuned}
 \end{table}
 
@@ -485,7 +535,7 @@ We report our treatment effect estimates using the language modeling approach de
     anx         &              0.629 &              0.631 & -0.003 [-0.120, 0.114]           & -0.052 [-0.095, -0.009] & -0.039 [-0.072, -0.005] \\
     \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
+    \caption{(Amazon \cite{przyant2021causal})  effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases. $\hat{\tau}_{R \rightarrow T}$ is the transported effect estimate from $P^R$ to $P^T$, while $\hat{\tau}_T$ is the effect estimated directly on $P^T$. $g(X), h(X)$ are obtained from LIWC.}
     \label{tab:results_clf_mpnet_amazon_pryzant}
 \end{table}
 
@@ -498,7 +548,7 @@ We report our treatment effect estimates using the language modeling approach de
      Outcome & 0.631 [0.604, 0.659]               & 0.642 [0.632, 0.653] & 0.448 [0.438, 0.457] \\
     \bottomrule
     \end{tabular}
-    \caption{Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_pryzant}.}
+    \caption{(Amazon \cite{przyant2021causal}) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_pryzant}.}
     \label{tab:results_clf_mpnet_amazon_pryzant_outcome}
 \end{table}
 
@@ -510,12 +560,12 @@ We report our treatment effect estimates using the language modeling approach de
     \toprule
     Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
     \midrule
-    posemo      &              0.634 &              0.621 & 0.013 [-0.184, 0.209]            & 0.038 [0.001, 0.074]    & 0.067 [0.041, 0.094]    \\
-    negemo      &              0.622 &              0.637 & -0.015 [-0.119, 0.090]           & -0.026 [-0.049, -0.003] & -0.040 [-0.059, -0.021] \\
-    anx         &              0.598 &              0.635 & -0.037 [-0.296, 0.222]           & -0.052 [-0.095, -0.009] & -0.039 [-0.072, -0.005] \\
+    posemo      &              0.642 &              0.59  & 0.052 [0.000, 0.103]             & 0.038 [0.001, 0.074]    & 0.067 [0.041, 0.094]    \\
+    negemo      &              0.627 &              0.641 & -0.013 [-0.050, 0.023]           & -0.026 [-0.049, -0.003] & -0.040 [-0.059, -0.021] \\
+    anx         &              0.597 &              0.639 & -0.042 [-0.110, 0.025]           & -0.052 [-0.095, -0.009] & -0.039 [-0.072, -0.005] \\
     \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases.}
+    \caption{(Amazon \cite{przyant2021causal}) Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases.}
     \label{tab:results_clm_gpt2_finetuned_amazon_pryzant}
 \end{table}
 
@@ -525,11 +575,39 @@ We report our treatment effect estimates using the language modeling approach de
     \toprule
     & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
     \midrule
-    Outcome & 0.632 [0.582, 0.681]               & 0.642 [0.632, 0.653] & 0.448 [0.438, 0.457] \\
+    Outcome & 0.637 [0.620, 0.653]               & 0.642 [0.632, 0.653] & 0.448 [0.438, 0.457] \\  
     \bottomrule
     \end{tabular}
-    \caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_finetuned_amazon_pryzant}.}
+    \caption{(Amazon \cite{przyant2021causal}) Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_finetuned_amazon_pryzant}.}
     \label{tab:results_clm_gpt2_finetuned_amazon_pryzant_outcome}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|ccccc}
+    \toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
+    \midrule
+    posemo      &              0.642 &              0.619 & 0.023 [-0.028, 0.075]            & 0.038 [0.001, 0.074]    & 0.067 [0.041, 0.094]    \\
+    negemo      &              0.623 &              0.648 & -0.025 [-0.059, 0.009]           & -0.026 [-0.049, -0.003] & -0.040 [-0.059, -0.021] \\
+    anx         &              0.589 &              0.644 & -0.055 [-0.124, 0.014]           & -0.052 [-0.095, -0.009] & -0.039 [-0.072, -0.005] \\
+    \bottomrule
+    \end{tabular}
+    \caption{(Amazon \cite{przyant2021causal}) Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Here, $P^R$ is the distribution of Amazon reviews for digital music purchases, while $P^T$ is the distribution of Amazon reviews for CD purchases.}
+    \label{tab:results_clm_gpt2_amazon_pryzant}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+    \toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+    \midrule
+    Outcome & 0.640 [0.625, 0.656]               & 0.642 [0.632, 0.653] & 0.448 [0.438, 0.457] \\ 
+    \bottomrule
+    \end{tabular}
+    \caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_pryzant}.}
+    \label{tab:results_clm_gpt2_amazon_pryzant_outcome}
 \end{table}
 
 \newpage
@@ -541,19 +619,19 @@ We report our treatment effect estimates using the language modeling approach de
 \toprule
       Treatment &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$       & $\hat{\tau}_T$       \\
 \midrule
-    sexual   &              5.241 &              2.715 & 2.526 [0.080, 4.972]             & 2.482 [1.955, 3.008] & 2.534 [1.853, 3.215] \\
-    female   &              5.188 &              2.727 & 2.461 [0.287, 4.635]             & 3.107 [2.529, 3.686] & 2.789 [2.328, 3.250] \\
-    filler   &              4.903 &              2.737 & 2.167 [-1.036, 5.369]            & 2.889 [2.275, 3.503] & 3.597 [2.676, 4.518] \\
-    netspeak &              5.53  &              2.7   & 2.830 [0.601, 5.060]             & 3.231 [2.830, 3.633] & 3.511 [2.938, 4.084] \\
-    home     &              5.266 &              2.532 & 2.734 [0.510, 4.957]             & 2.601 [2.363, 2.840] & 2.474 [2.251, 2.696] \\
-    informal &              4.738 &              2.145 & 2.593 [1.174, 4.012]             & 3.243 [3.091, 3.396] & 3.179 [3.018, 3.340] \\
-    shehe    &              6.243 &              2.723 & 3.520 [1.170, 5.870]             & 2.814 [2.344, 3.284] & 2.669 [2.226, 3.112] \\
-    nonflu   &              5.096 &              2.484 & 2.613 [1.109, 4.116]             & 2.939 [2.745, 3.132] & 2.896 [2.698, 3.095] \\
-    assent   &              5.403 &              2.508 & 2.895 [0.634, 5.157]             & 2.858 [2.610, 3.105] & 2.823 [2.521, 3.125] \\
-    death    &              4.698 &              2.724 & 1.974 [-0.812, 4.760]            & 2.870 [2.368, 3.372] & 2.728 [2.053, 3.403] \\
+     sexual      &              7.898 &              2.493 & 5.405 [2.091, 8.718]             & 6.378 [5.308, 7.448]  & 6.703 [5.273, 8.133]   \\
+ female      &              8.023 &              2.515 & 5.508 [1.254, 9.762]             & 6.002 [4.967, 7.037]  & 5.410 [4.614, 6.206]   \\
+ filler      &              6.375 &              2.556 & 3.819 [-0.071, 7.708]            & 5.847 [4.674, 7.020]  & 7.507 [5.659, 9.356]   \\
+ netspeak    &              6.8   &              2.509 & 4.291 [1.591, 6.991]             & 5.416 [4.706, 6.127]  & 5.817 [4.812, 6.823]   \\
+ home        &              7.373 &              2.16  & 5.213 [2.236, 8.191]             & 5.167 [4.784, 5.549]  & 4.910 [4.560, 5.260]   \\
+ informal    &              3.617 &              2.307 & 1.310 [-0.031, 2.652]            & 2.467 [2.245, 2.689]  & 2.167 [1.937, 2.398]   \\
+ shehe       &              4.444 &              2.598 & 1.846 [-0.166, 3.859]            & 0.803 [0.130, 1.475]  & 1.358 [0.777, 1.940]   \\
+ nonflu      &              4.115 &              2.438 & 1.677 [0.454, 2.899]             & 2.726 [2.430, 3.022]  & 2.290 [2.001, 2.578]   \\
+ assent      &              4.375 &              2.447 & 1.927 [-0.167, 4.021]            & 3.048 [2.653, 3.443]  & 2.681 [2.227, 3.135]   \\
+ death       &              1.341 &              2.662 & -1.321 [-3.149, 0.508]           & 0.093 [-0.589, 0.775] & -0.146 [-0.959, 0.667] \\
  \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+    \caption{(Amazon, direct combination) Treatment effect estimates using the classification approach, where the classifier is a logistic regression learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
     \label{tab:results_clf_mpnet_amazon_synthetic}
 \end{table}
 
@@ -563,13 +641,154 @@ We report our treatment effect estimates using the language modeling approach de
     \toprule
      & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
 \midrule
-    Outcome & 2.777 [1.984, 3.570]               & 4.175 [4.099, 4.251] & 4.127 [4.054, 4.199] \\
+ Outcome & 2.626 [1.824, 3.428]               & 4.025 [3.915, 4.136] & 4.101 [4.001, 4.201] \\
 \bottomrule
     \end{tabular}
-    \caption{Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic}.}
+    \caption{(Amazon, direct combination) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic}.}
     \label{tab:results_clf_mpnet_amazon_synthetic_outcome}
 \end{table}
 
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$       & $\hat{\tau}_T$        \\
+\midrule
+    sexual      &             11.111 &              5.243 & 5.867 [1.200, 10.535]            & 7.404 [5.903, 8.906] & 7.829 [5.792, 9.867]  \\
+    female      &             11.863 &              5.254 & 6.610 [1.149, 12.070]            & 7.918 [6.371, 9.465] & 6.550 [5.386, 7.714]  \\
+    filler      &             10.091 &              5.3   & 4.791 [-1.555, 11.137]           & 7.209 [5.558, 8.861] & 9.655 [7.052, 12.258] \\
+    netspeak    &             10.605 &              5.241 & 5.364 [1.653, 9.076]             & 7.394 [6.322, 8.467] & 7.969 [6.453, 9.484]  \\
+    home        &             12.264 &              4.712 & 7.552 [2.126, 12.978]            & 7.179 [6.550, 7.808] & 6.763 [6.180, 7.345]  \\
+    informal    &              7.256 &              4.786 & 2.470 [-0.437, 5.378]            & 4.320 [3.941, 4.699] & 4.245 [3.837, 4.652]  \\
+    shehe       &              9.865 &              5.318 & 4.547 [0.653, 8.440]             & 3.240 [2.173, 4.307] & 3.031 [2.058, 4.004]  \\
+    nonflu      &              7.948 &              5.064 & 2.884 [0.367, 5.401]             & 4.578 [4.081, 5.074] & 4.195 [3.694, 4.696]  \\
+    assent      &              8.695 &              5.049 & 3.645 [-0.901, 8.192]            & 4.705 [4.073, 5.337] & 4.624 [3.859, 5.389]  \\
+    death       &              5.067 &              5.396 & -0.330 [-3.730, 3.071]           & 2.810 [1.678, 3.942] & 3.303 [1.859, 4.746]  \\
+\bottomrule
+    \end{tabular}
+    \caption{(Amazon, regression combination) Treatment effect estimates using the classification approach, where the classifier is a logistic regression learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+    \label{tab:results_clf_mpnet_amazon_synthetic_predreg}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 5.388 [3.584, 7.191]               & 8.067 [7.878, 8.256] & 8.891 [8.710, 9.072] \\
+\bottomrule
+    \end{tabular}
+    \caption{(Amazon, regression combination) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic_predreg}.}
+    \label{tab:results_clf_mpnet_amazon_synthetic_predreg_outcome}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$        & $\hat{\tau}_T$         \\
+\midrule
+    sexual      &              7.875 &              5.674 & 2.201 [-1.809, 6.211]            & 7.677 [5.050, 10.304] & 10.470 [6.424, 14.516] \\
+    female      &             11.744 &              5.603 & 6.140 [1.046, 11.234]            & 8.021 [6.172, 9.870]  & 6.104 [4.825, 7.383]   \\
+    filler      &              8.002 &              5.685 & 2.317 [-2.975, 7.609]            & 7.373 [4.922, 9.825]  & 12.269 [8.018, 16.520] \\
+    netspeak    &              8.907 &              5.639 & 3.268 [0.299, 6.238]             & 6.759 [5.252, 8.267]  & 9.176 [6.842, 11.510]  \\
+    home        &             11.05  &              5.205 & 5.845 [1.427, 10.263]            & 6.564 [5.801, 7.327]  & 6.756 [5.997, 7.514]   \\
+    informal    &              7.754 &              5.075 & 2.680 [-0.257, 5.616]            & 4.328 [3.896, 4.759]  & 4.369 [3.891, 4.847]   \\
+    shehe       &             10.6   &              5.652 & 4.947 [0.524, 9.371]             & 3.588 [2.304, 4.872]  & 2.464 [1.453, 3.475]   \\
+    nonflu      &              7.632 &              5.487 & 2.145 [-0.435, 4.725]            & 4.187 [3.571, 4.803]  & 4.160 [3.540, 4.780]   \\
+    assent      &             10.391 &              5.251 & 5.140 [0.735, 9.545]             & 5.075 [4.377, 5.773]  & 4.436 [3.622, 5.251]   \\
+    death       &              7.138 &              5.689 & 1.449 [-3.469, 6.366]            & 2.856 [1.624, 4.089]  & 2.399 [0.688, 4.109]   \\
+\bottomrule
+    \end{tabular}
+    \caption{(Amazon, interaction) Treatment effect estimates using the classification approach, where the classifier is a logistic regression learned over embeddings from pre-trained MPNet. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+    \label{tab:results_clf_mpnet_amazon_synthetic_interaction}
+\end{table}
+
+\begin{table}[]
+    \centering
+    \begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 5.728 [3.865, 7.590]               & 8.150 [7.935, 8.364] & 8.817 [8.615, 9.019] \\
+\bottomrule
+    \end{tabular}
+    \caption{(Amazon, interaction) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic_interaction}.}
+    \label{tab:results_clf_mpnet_amazon_synthetic_interaction_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
+\midrule
+    sexual      &              6.312 &              0.833 & 5.478 [5.090, 5.867]             & 5.712 [4.783, 6.641]    & 5.990 [4.762, 7.219]    \\
+    female      &              5.647 &              0.849 & 4.798 [4.371, 5.225]             & 5.070 [4.196, 5.943]    & 4.764 [4.075, 5.454]    \\
+    filler      &              5.692 &              0.907 & 4.785 [4.267, 5.302]             & 5.099 [4.088, 6.110]    & 6.420 [4.847, 7.992]    \\
+    netspeak    &              4.989 &              0.767 & 4.222 [3.866, 4.578]             & 4.498 [3.901, 5.096]    & 4.821 [3.985, 5.657]    \\
+    home        &              4.445 &              0.331 & 4.114 [3.944, 4.283]             & 4.250 [3.935, 4.564]    & 4.052 [3.765, 4.339]    \\
+    informal    &              1.914 &              0.446 & 1.468 [1.309, 1.627]             & 1.738 [1.552, 1.923]    & 1.380 [1.189, 1.571]    \\
+    shehe       &              0.636 &              1.067 & -0.431 [-0.910, 0.049]           & -0.031 [-0.605, 0.542]  & 0.745 [0.255, 1.234]    \\
+    nonflu      &              2.406 &              0.627 & 1.779 [1.583, 1.975]             & 1.987 [1.744, 2.230]    & 1.551 [1.314, 1.787]    \\
+    assent      &              2.828 &              0.737 & 2.091 [1.834, 2.348]             & 2.353 [2.023, 2.682]    & 1.908 [1.538, 2.278]    \\
+    death       &             -0.087 &              1.098 & -1.185 [-1.674, -0.697]          & -0.795 [-1.375, -0.215] & -1.265 [-1.980, -0.550] \\
+\bottomrule
+\end{tabular}
+\caption{(Lexicon-only sanity check) Treatment effect estimates using the classification approach, where the classifier is a logistic regression learned over binary encodings of LIWC categories. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+\label{tab:results_clf_mpnet_amazon_synthetic_lexonly}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 1.042 [0.968, 1.116]               & 1.367 [1.275, 1.460] & 1.196 [1.113, 1.278] \\
+\bottomrule
+\end{tabular}
+\caption{(Lexicon-only sanity check) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic_lexonly}.}
+\label{tab:results_clf_mpnet_amazon_synthetic_lexonly_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
+\midrule
+    sexual      &              6.19  &              0.848 & 5.341 [4.911, 5.772]             & 5.712 [4.783, 6.641]    & 5.990 [4.762, 7.219]    \\
+    female      &              5.348 &              0.859 & 4.489 [4.026, 4.952]             & 5.070 [4.196, 5.943]    & 4.764 [4.075, 5.454]    \\
+    filler      &              5.295 &              0.924 & 4.372 [3.947, 4.796]             & 5.099 [4.088, 6.110]    & 6.420 [4.847, 7.992]    \\
+    netspeak    &              4.657 &              0.776 & 3.881 [3.539, 4.224]             & 4.498 [3.901, 5.096]    & 4.821 [3.985, 5.657]    \\
+    home        &              4.388 &              0.331 & 4.058 [3.888, 4.227]             & 4.250 [3.935, 4.564]    & 4.052 [3.765, 4.339]    \\
+    informal    &              1.843 &              0.447 & 1.396 [1.239, 1.553]             & 1.738 [1.552, 1.923]    & 1.380 [1.189, 1.571]    \\
+    shehe       &             -0.245 &              1.08  & -1.326 [-1.724, -0.927]          & -0.031 [-0.605, 0.542]  & 0.745 [0.255, 1.234]    \\
+    nonflu      &              2.287 &              0.633 & 1.654 [1.470, 1.838]             & 1.987 [1.744, 2.230]    & 1.551 [1.314, 1.787]    \\
+    assent      &              2.651 &              0.745 & 1.905 [1.664, 2.147]             & 2.353 [2.023, 2.682]    & 1.908 [1.538, 2.278]    \\
+    death       &             -0.348 &              1.115 & -1.462 [-1.892, -1.032]          & -0.795 [-1.375, -0.215] & -1.265 [-1.980, -0.550] \\
+\bottomrule
+\end{tabular}
+\caption{(Lexicon-only sanity check) Treatment effect estimates using the classification approach, where the classifier is a logistic regression learned over binary encodings of LIWC categories. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products. We use a doubly robust estimator.}
+\label{tab:results_clf_mpnet_amazon_synthetic_lexonly_dr}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 1.057 [0.984, 1.131]               & 1.367 [1.275, 1.460] & 1.196 [1.113, 1.278] \\
+\bottomrule
+\end{tabular}
+\caption{(Lexicon-only sanity check) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic_lexonly}.}
+\label{tab:results_clf_mpnet_amazon_synthetic_lexonly_dr_outcome}
+\end{table}
+
+\newpage
 \subsubsection{Amazon: Language modeling approach}
 
 \begin{table}[!ht]
@@ -578,19 +797,19 @@ We report our treatment effect estimates using the language modeling approach de
 \toprule
       Treatment &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$       & $\hat{\tau}_T$       \\
 \midrule
-    sexual   &              7.092 &              7.451 & -0.359 [-13.963, 13.246]         & 2.482 [1.955, 3.008] & 2.534 [1.853, 3.215] \\
-    female   &              5.123 &              7.475 & -2.352 [-13.091, 8.387]          & 3.107 [2.529, 3.686] & 2.789 [2.328, 3.250] \\
-    filler   &              5.669 &              7.453 & -1.784 [-13.798, 10.230]         & 2.889 [2.275, 3.503] & 3.597 [2.676, 4.518] \\
-    netspeak &              8.099 &              7.435 & 0.664 [-15.591, 16.919]          & 3.231 [2.830, 3.633] & 3.511 [2.938, 4.084] \\
-    home     &              7.39  &              7.458 & -0.068 [-15.745, 15.610]         & 2.601 [2.363, 2.840] & 2.474 [2.251, 2.696] \\
-    informal &              8.767 &              3.85  & 4.918 [-9.833, 19.668]           & 3.243 [3.091, 3.396] & 3.179 [3.018, 3.340] \\
-    shehe    &              9.096 &              4.855 & 4.241 [-12.924, 21.407]          & 2.814 [2.344, 3.284] & 2.669 [2.226, 3.112] \\
-    nonflu   &              9.046 &              4.788 & 4.258 [-12.645, 21.161]          & 2.939 [2.745, 3.132] & 2.896 [2.698, 3.095] \\
-    assent   &              7.683 &              7.408 & 0.275 [-15.075, 15.624]          & 2.858 [2.610, 3.105] & 2.823 [2.521, 3.125] \\
-    death    &              6.012 &              7.459 & -1.446 [-13.198, 10.305]         & 2.870 [2.368, 3.372] & 2.728 [2.053, 3.403] \\
+ sexual      &             10.327 &              3.975 & 6.352 [5.226, 7.478]             & 6.378 [5.308, 7.448]  & 6.703 [5.273, 8.133]   \\
+ female      &              9.955 &              3.997 & 5.959 [4.811, 7.106]             & 6.002 [4.967, 7.037]  & 5.410 [4.614, 6.206]   \\
+ filler      &              9.637 &              4.072 & 5.565 [4.391, 6.738]             & 5.847 [4.674, 7.020]  & 7.507 [5.659, 9.356]   \\
+ netspeak    &              9.142 &              3.796 & 5.346 [4.543, 6.150]             & 5.416 [4.706, 6.127]  & 5.817 [4.812, 6.823]   \\
+ home        &              8.277 &              3.163 & 5.113 [4.687, 5.539]             & 5.167 [4.784, 5.549]  & 4.910 [4.560, 5.260]   \\
+ informal    &              5.567 &              2.91  & 2.657 [2.363, 2.951]             & 2.467 [2.245, 2.689]  & 2.167 [1.937, 2.398]   \\
+ shehe       &              4.998 &              4.242 & 0.756 [-0.044, 1.556]            & 0.803 [0.130, 1.475]  & 1.358 [0.777, 1.940]   \\
+ nonflu      &              6.173 &              3.437 & 2.736 [2.350, 3.121]             & 2.726 [2.430, 3.022]  & 2.290 [2.001, 2.578]   \\
+ assent      &              6.692 &              3.691 & 3.001 [2.511, 3.491]             & 3.048 [2.653, 3.443]  & 2.681 [2.227, 3.135]   \\
+ death       &              4.107 &              4.303 & -0.196 [-0.962, 0.570]           & 0.093 [-0.589, 0.775] & -0.146 [-0.959, 0.667] \\
 \bottomrule
     \end{tabular}
-    \caption{Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+    \caption{(Amazon, direct combination) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
     \label{tab:results_clm_gpt2_amazon_synthetic}
 \end{table}
 
@@ -600,11 +819,355 @@ We report our treatment effect estimates using the language modeling approach de
 \toprule
     & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
 \midrule
-    Outcome & 7.449 [-2.819, 17.716]             & 4.175 [4.099, 4.251] & 4.127 [4.054, 4.199] \\
+ Outcome & 4.291 [4.134, 4.448]               & 4.025 [3.915, 4.136] & 4.101 [4.001, 4.201] \\
 \bottomrule
 \end{tabular}
-\caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_synthetic}.}
+\caption{(Amazon, direct combination) Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_synthetic}.}
 \label{tab:results_clm_gpt2_amazon_synthetic_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$       & $\hat{\tau}_T$        \\
+\midrule
+    sexual      &             14.769 &              7.919 & 6.850 [5.262, 8.438]             & 7.404 [5.903, 8.906] & 7.829 [5.792, 9.867]  \\
+    female      &             15.389 &              7.899 & 7.490 [5.907, 9.073]             & 7.918 [6.371, 9.465] & 6.550 [5.386, 7.714]  \\
+    filler      &             14.476 &              8.007 & 6.470 [4.847, 8.092]             & 7.209 [5.558, 8.861] & 9.655 [7.052, 12.258] \\
+    netspeak    &             14.659 &              7.64  & 7.019 [5.866, 8.171]             & 7.394 [6.322, 8.467] & 7.969 [6.453, 9.484]  \\
+    home        &             13.796 &              6.797 & 6.999 [6.296, 7.702]             & 7.179 [6.550, 7.808] & 6.763 [6.180, 7.345]  \\
+    informal    &             10.279 &              6.164 & 4.116 [3.645, 4.586]             & 4.320 [3.941, 4.699] & 4.245 [3.837, 4.652]  \\
+    shehe       &             10.612 &              8.08  & 2.532 [1.360, 3.703]             & 3.240 [2.173, 4.307] & 3.031 [2.058, 4.004]  \\
+    nonflu      &             11.156 &              6.98  & 4.176 [3.586, 4.765]             & 4.578 [4.081, 5.074] & 4.195 [3.694, 4.696]  \\
+    assent      &             11.807 &              7.42  & 4.386 [3.632, 5.141]             & 4.705 [4.073, 5.337] & 4.624 [3.859, 5.389]  \\
+    death       &             10.748 &              8.092 & 2.656 [1.266, 4.046]             & 2.810 [1.678, 3.942] & 3.303 [1.859, 4.746]  \\
+\bottomrule
+\end{tabular}
+\caption{(Amazon, regression combination) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with CLM on $P^R$. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+\label{tab:results_clm_gpt2_amazon_synthetic_predreg_finetuned_pr}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 8.241 [7.996, 8.485]               & 8.067 [7.878, 8.256] & 8.891 [8.710, 9.072] \\
+\bottomrule
+\end{tabular}
+\caption{(Amazon, regression combination) Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_synthetic_predreg_finetuned_pr}.}
+\label{tab:results_clm_gpt2_amazon_synthetic_predreg_finetuned_pr_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$       & $\hat{\tau}_T$        \\
+\midrule
+    sexual      &             14.938 &              7.965 & 6.973 [5.398, 8.548]             & 7.404 [5.903, 8.906] & 7.829 [5.792, 9.867]  \\
+    female      &             15.441 &              7.951 & 7.490 [5.897, 9.083]             & 7.918 [6.371, 9.465] & 6.550 [5.386, 7.714]  \\
+    filler      &             14.659 &              8.054 & 6.605 [4.929, 8.280]             & 7.209 [5.558, 8.861] & 9.655 [7.052, 12.258] \\
+    netspeak    &             14.677 &              7.692 & 6.985 [5.877, 8.093]             & 7.394 [6.322, 8.467] & 7.969 [6.453, 9.484]  \\
+    home        &             13.89  &              6.831 & 7.059 [6.337, 7.781]             & 7.179 [6.550, 7.808] & 6.763 [6.180, 7.345]  \\
+    informal    &             10.354 &              6.182 & 4.172 [3.696, 4.648]             & 4.320 [3.941, 4.699] & 4.245 [3.837, 4.652]  \\
+    shehe       &             10.729 &              8.129 & 2.600 [1.406, 3.793]             & 3.240 [2.173, 4.307] & 3.031 [2.058, 4.004]  \\
+    nonflu      &             11.234 &              7.014 & 4.221 [3.628, 4.814]             & 4.578 [4.081, 5.074] & 4.195 [3.694, 4.696]  \\
+    assent      &             11.901 &              7.459 & 4.442 [3.685, 5.199]             & 4.705 [4.073, 5.337] & 4.624 [3.859, 5.389]  \\
+    death       &             10.777 &              8.148 & 2.629 [1.287, 3.972]             & 2.810 [1.678, 3.942] & 3.303 [1.859, 4.746]  \\
+\bottomrule
+\end{tabular}
+\caption{(Amazon, regression combination) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with CLM on $P^T$. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+\label{tab:results_clm_gpt2_amazon_synthetic_predreg_finetuned_pt}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 8.296 [8.048, 8.544]               & 8.067 [7.878, 8.256] & 8.891 [8.710, 9.072] \\
+\bottomrule
+\end{tabular}
+\caption{(Amazon, regression combination) Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_synthetic_predreg_finetuned_pt}.}
+\label{tab:results_clm_gpt2_amazon_synthetic_predreg_finetuned_pt_outcome}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$       & $\hat{\tau}_T$        \\
+\midrule
+    sexual      &             15.696 &              8.363 & 7.333 [5.410, 9.255]             & 7.404 [5.903, 8.906] & 7.829 [5.792, 9.867]  \\
+    female      &             16.423 &              8.328 & 8.095 [6.040, 10.150]            & 7.918 [6.371, 9.465] & 6.550 [5.386, 7.714]  \\
+    filler      &             15.257 &              8.46  & 6.797 [4.868, 8.725]             & 7.209 [5.558, 8.861] & 9.655 [7.052, 12.258] \\
+    netspeak    &             15.317 &              8.055 & 7.262 [5.889, 8.635]             & 7.394 [6.322, 8.467] & 7.969 [6.453, 9.484]  \\
+    home        &             14.392 &              7.125 & 7.267 [6.456, 8.078]             & 7.179 [6.550, 7.808] & 6.763 [6.180, 7.345]  \\
+    informal    &             10.931 &              6.343 & 4.588 [4.036, 5.140]             & 4.320 [3.941, 4.699] & 4.245 [3.837, 4.652]  \\
+    shehe       &             11.675 &              8.523 & 3.152 [1.736, 4.568]             & 3.240 [2.173, 4.307] & 3.031 [2.058, 4.004]  \\
+    nonflu      &             11.919 &              7.279 & 4.640 [3.931, 5.349]             & 4.578 [4.081, 5.074] & 4.195 [3.694, 4.696]  \\
+    assent      &             12.393 &              7.811 & 4.582 [3.719, 5.444]             & 4.705 [4.073, 5.337] & 4.624 [3.859, 5.389]  \\
+    death       &             11.231 &              8.563 & 2.668 [1.158, 4.178]             & 2.810 [1.678, 3.942] & 3.303 [1.859, 4.746]  \\
+ \bottomrule
+    \end{tabular}
+    \caption{(Amazon, regression combination) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+    \label{tab:results_clm_gpt2_amazon_synthetic_predreg}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+\toprule
+     & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 8.727 [8.435, 9.019]               & 8.067 [7.878, 8.256] & 8.891 [8.710, 9.072] \\
+\bottomrule
+    \end{tabular}
+    \caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_synthetic_predreg}.}
+    \label{tab:results_clm_gpt2_amazon_synthetic_predreg_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$        & $\hat{\tau}_T$         \\
+\midrule
+    sexual      &             15.237 &              7.988 & 7.249 [4.378, 10.120]            & 7.677 [5.050, 10.304] & 10.470 [6.424, 14.516] \\
+    female      &             15.763 &              7.974 & 7.790 [5.748, 9.831]             & 8.021 [6.172, 9.870]  & 6.104 [4.825, 7.383]   \\
+    filler      &             14.804 &              8.086 & 6.718 [4.137, 9.298]             & 7.373 [4.922, 9.825]  & 12.269 [8.018, 16.520] \\
+    netspeak    &             14.079 &              7.787 & 6.291 [4.692, 7.891]             & 6.759 [5.252, 8.267]  & 9.176 [6.842, 11.510]  \\
+    home        &             13.42  &              7.004 & 6.416 [5.564, 7.268]             & 6.564 [5.801, 7.327]  & 6.756 [5.997, 7.514]   \\
+    informal    &             10.413 &              6.197 & 4.216 [3.690, 4.742]             & 4.328 [3.896, 4.759]  & 4.369 [3.891, 4.847]   \\
+    shehe       &             10.784 &              8.166 & 2.618 [1.360, 3.876]             & 3.588 [2.304, 4.872]  & 2.464 [1.453, 3.475]   \\
+    nonflu      &             11.023 &              7.164 & 3.859 [3.144, 4.574]             & 4.187 [3.571, 4.803]  & 4.160 [3.540, 4.780]   \\
+    assent      &             12.053 &              7.47  & 4.584 [3.825, 5.342]             & 5.075 [4.377, 5.773]  & 4.436 [3.622, 5.251]   \\
+    death       &             10.361 &              8.213 & 2.147 [0.822, 3.473]             & 2.856 [1.624, 4.089]  & 2.399 [0.688, 4.109]   \\
+\bottomrule
+\end{tabular}
+\caption{(Amazon, interaction) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned using CLM on $P^R$. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+\label{tab:results_clm_gpt2_amazon_synthetic_interaction_finetuned_pr}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 8.295 [8.025, 8.565]               & 8.150 [7.935, 8.364] & 8.817 [8.615, 9.019] \\
+\bottomrule
+\end{tabular}
+\caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_synthetic_interaction_finetuned_pr}.}
+\label{tab:results_clm_gpt2_amazon_synthetic_interaction_finetuned_pr_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$        & $\hat{\tau}_T$         \\
+\midrule
+    sexual      &             15.237 &              7.988 & 7.249 [4.378, 10.120]            & 7.677 [5.050, 10.304] & 10.470 [6.424, 14.516] \\
+    female      &             15.763 &              7.974 & 7.790 [5.748, 9.831]             & 8.021 [6.172, 9.870]  & 6.104 [4.825, 7.383]   \\
+    filler      &             14.804 &              8.086 & 6.718 [4.137, 9.298]             & 7.373 [4.922, 9.825]  & 12.269 [8.018, 16.520] \\
+    netspeak    &             14.079 &              7.787 & 6.291 [4.692, 7.891]             & 6.759 [5.252, 8.267]  & 9.176 [6.842, 11.510]  \\
+    home        &             13.42  &              7.004 & 6.416 [5.564, 7.268]             & 6.564 [5.801, 7.327]  & 6.756 [5.997, 7.514]   \\
+    informal    &             10.413 &              6.197 & 4.216 [3.690, 4.742]             & 4.328 [3.896, 4.759]  & 4.369 [3.891, 4.847]   \\
+    shehe       &             10.784 &              8.166 & 2.618 [1.360, 3.876]             & 3.588 [2.304, 4.872]  & 2.464 [1.453, 3.475]   \\
+    nonflu      &             11.023 &              7.164 & 3.859 [3.144, 4.574]             & 4.187 [3.571, 4.803]  & 4.160 [3.540, 4.780]   \\
+    assent      &             12.053 &              7.47  & 4.584 [3.825, 5.342]             & 5.075 [4.377, 5.773]  & 4.436 [3.622, 5.251]   \\
+    death       &             10.361 &              8.213 & 2.147 [0.822, 3.473]             & 2.856 [1.624, 4.089]  & 2.399 [0.688, 4.109]   \\
+\bottomrule
+\end{tabular}
+\caption{(Amazon, interaction) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned using CLM on $P^T$. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+\label{tab:results_clm_gpt2_amazon_synthetic_interaction_finetuned_pt}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 8.334 [8.061, 8.608]               & 8.150 [7.935, 8.364] & 8.817 [8.615, 9.019] \\
+\bottomrule
+\end{tabular}
+\caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_synthetic_interaction_finetuned_pt}.}
+\label{tab:results_clm_gpt2_amazon_synthetic_interaction_finetuned_pt_outcome}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$        & $\hat{\tau}_T$         \\
+\midrule
+    sexual      &             16.77  &              8.346 & 8.423 [4.982, 11.865]            & 7.677 [5.050, 10.304] & 10.470 [6.424, 14.516] \\
+    female      &             16.742 &              8.35  & 8.392 [5.902, 10.882]            & 8.021 [6.172, 9.870]  & 6.104 [4.825, 7.383]   \\
+    filler      &             15.712 &              8.48  & 7.232 [4.311, 10.152]            & 7.373 [4.922, 9.825]  & 12.269 [8.018, 16.520] \\
+    netspeak    &             15.045 &              8.123 & 6.921 [4.953, 8.889]             & 6.759 [5.252, 8.267]  & 9.176 [6.842, 11.510]  \\
+    home        &             13.993 &              7.285 & 6.708 [5.770, 7.647]             & 6.564 [5.801, 7.327]  & 6.756 [5.997, 7.514]   \\
+    informal    &             11.003 &              6.342 & 4.661 [4.048, 5.275]             & 4.328 [3.896, 4.759]  & 4.369 [3.891, 4.847]   \\
+    shehe       &             11.59  &              8.568 & 3.021 [1.573, 4.470]             & 3.588 [2.304, 4.872]  & 2.464 [1.453, 3.475]   \\
+    nonflu      &             11.749 &              7.41  & 4.339 [3.492, 5.186]             & 4.187 [3.571, 4.803]  & 4.160 [3.540, 4.780]   \\
+    assent      &             12.47  &              7.838 & 4.633 [3.729, 5.537]             & 5.075 [4.377, 5.773]  & 4.436 [3.622, 5.251]   \\
+    death       &             10.859 &              8.627 & 2.232 [0.504, 3.959]             & 2.856 [1.624, 4.089]  & 2.399 [0.688, 4.109]   \\
+\bottomrule
+    \end{tabular}
+    \caption{(Amazon, interaction) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+    \label{tab:results_clm_gpt2_amazon_synthetic_interaction}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 8.764 [8.440, 9.089]               & 8.150 [7.935, 8.364] & 8.817 [8.615, 9.019] \\
+\bottomrule
+    \end{tabular}
+    \caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_amazon_synthetic_interaction}.}
+    \label{tab:results_clm_gpt2_amazon_synthetic_interaction_outcome}
+\end{table}
+
+\newpage
+\subsubsection{EmoBank: Classification approach}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
+\midrule
+    posemo      &              3.106 &              2.74  & 0.366 [0.226, 0.506]             & 0.352 [0.314, 0.390]    & 0.323 [0.280, 0.367]    \\
+    negemo      &              2.599 &              2.963 & -0.364 [-0.509, -0.220]          & -0.399 [-0.458, -0.340] & -0.375 [-0.418, -0.333] \\
+    anx         &              2.566 &              2.876 & -0.310 [-0.620, -0.000]          & -0.439 [-0.580, -0.298] & -0.276 [-0.359, -0.192] \\
+    nonflu      &              3.112 &              2.853 & 0.258 [-0.184, 0.700]            & 0.159 [0.046, 0.273]    & 0.178 [0.043, 0.313]    \\
+    filler      &              3.064 &              2.857 & 0.207 [0.019, 0.395]             & -0.019 [-0.129, 0.092]  & 0.199 [-0.191, 0.588]   \\
+    home        &              2.827 &              2.86  & -0.033 [-0.307, 0.241]           & 0.056 [-0.018, 0.130]   & 0.048 [-0.027, 0.124]   \\
+    assent      &              3.128 &              2.855 & 0.273 [-0.182, 0.728]            & 0.239 [0.057, 0.421]    & 0.332 [0.110, 0.554]    \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Treatment effects using the classification approach, where the classifier is a logistic regression learned over pre-trained MPNet embeddings. $P^R$ is the distribution of sentences with high writer-intended valence, and $P^T$ is the distribution of sentences with low writer-intended valence. The measured outcome $Y$ is reader-perceived valence.}
+\label{tab:results_clf_mpnet_emobank}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 2.858 [2.791, 2.924]               & 3.085 [3.067, 3.104] & 2.801 [2.782, 2.820] \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_emobank}.}
+\label{tab:results_clf_mpnet_emobank_outcome}
+\end{table}
+
+\newpage
+\subsubsection{EmoBank: Language modeling approach}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
+\midrule
+    posemo      &              3.283 &              2.927 & 0.356 [0.190, 0.523]             & 0.352 [0.314, 0.390]    & 0.323 [0.280, 0.367]    \\
+    negemo      &              2.739 &              3.143 & -0.404 [-0.593, -0.216]          & -0.399 [-0.458, -0.340] & -0.375 [-0.418, -0.333] \\
+    anx         &              2.632 &              3.086 & -0.453 [-0.868, -0.038]          & -0.439 [-0.580, -0.298] & -0.276 [-0.359, -0.192] \\
+    nonflu      &              3.212 &              3.068 & 0.144 [-0.472, 0.760]            & 0.159 [0.046, 0.273]    & 0.178 [0.043, 0.313]    \\
+    filler      &              3.109 &              3.071 & 0.038 [-1.681, 1.758]            & -0.019 [-0.129, 0.092]  & 0.199 [-0.191, 0.588]   \\
+    home        &              3.106 &              3.069 & 0.038 [-0.249, 0.324]            & 0.056 [-0.018, 0.130]   & 0.048 [-0.027, 0.124]   \\
+    assent      &              3.331 &              3.067 & 0.264 [-0.433, 0.960]            & 0.239 [0.057, 0.421]    & 0.332 [0.110, 0.554]    \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned using CLM on $P^R$. $P^R$ is the distribution of sentences with high writer-intended valence, and $P^T$ is the distribution of sentences with low writer-intended valence. The measured outcome $Y$ is reader-perceived valence.}
+\label{tab:results_clm_gpt2_finetuned_emobank_pr}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 3.071 [2.991, 3.151]               & 3.085 [3.067, 3.104] & 2.801 [2.782, 2.820] \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_finetuned_emobank_pr}.}
+\label{tab:results_clm_gpt2_finetuned_emobank_pr_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
+\midrule
+    posemo      &              3.274 &              2.931 & 0.343 [0.180, 0.507]             & 0.352 [0.314, 0.390]    & 0.323 [0.280, 0.367]    \\
+    negemo      &              2.745 &              3.145 & -0.400 [-0.585, -0.215]          & -0.399 [-0.458, -0.340] & -0.375 [-0.418, -0.333] \\
+    anx         &              2.665 &              3.087 & -0.422 [-0.836, -0.007]          & -0.439 [-0.580, -0.298] & -0.276 [-0.359, -0.192] \\
+    nonflu      &              3.207 &              3.07  & 0.137 [-0.433, 0.707]            & 0.159 [0.046, 0.273]    & 0.178 [0.043, 0.313]    \\
+    filler      &              3.097 &              3.073 & 0.024 [-1.306, 1.353]            & -0.019 [-0.129, 0.092]  & 0.199 [-0.191, 0.588]   \\
+    home        &              3.106 &              3.071 & 0.035 [-0.259, 0.329]            & 0.056 [-0.018, 0.130]   & 0.048 [-0.027, 0.124]   \\
+    assent      &              3.325 &              3.069 & 0.256 [-0.453, 0.965]            & 0.239 [0.057, 0.421]    & 0.332 [0.110, 0.554]    \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned using CLM on $P^T$. $P^R$ is the distribution of sentences with high writer-intended valence, and $P^T$ is the distribution of sentences with low writer-intended valence. The measured outcome $Y$ is reader-perceived valence.}
+\label{tab:results_clm_gpt2_finetuned_emobank_pt}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 3.073 [2.994, 3.151]               & 3.085 [3.067, 3.104] & 2.801 [2.782, 2.820] \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_finetuned_emobank_pt}.}
+\label{tab:results_clm_gpt2_finetuned_emobank_pt_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
+\midrule
+    posemo      &              3.295 &              2.941 & 0.354 [0.229, 0.480]             & 0.352 [0.314, 0.390]    & 0.323 [0.280, 0.367]    \\
+    negemo      &              2.784 &              3.163 & -0.379 [-0.531, -0.226]          & -0.399 [-0.458, -0.340] & -0.375 [-0.418, -0.333] \\
+    anx         &              2.678 &              3.107 & -0.429 [-0.762, -0.096]          & -0.439 [-0.580, -0.298] & -0.276 [-0.359, -0.192] \\
+    nonflu      &              3.218 &              3.089 & 0.129 [-0.320, 0.577]            & 0.159 [0.046, 0.273]    & 0.178 [0.043, 0.313]    \\
+    filler      &              3.11  &              3.091 & 0.018 [-1.882, 1.919]            & -0.019 [-0.129, 0.092]  & 0.199 [-0.191, 0.588]   \\
+    home        &              3.166 &              3.086 & 0.080 [-0.154, 0.313]            & 0.056 [-0.018, 0.130]   & 0.048 [-0.027, 0.124]   \\
+    assent      &              3.291 &              3.089 & 0.201 [-0.450, 0.853]            & 0.239 [0.057, 0.421]    & 0.332 [0.110, 0.554]    \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. $P^R$ is the distribution of sentences with high writer-intended valence, and $P^T$ is the distribution of sentences with low writer-intended valence. The measured outcome $Y$ is reader-perceived valence.}
+\label{tab:results_clm_gpt2_pretrained_emobank}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 3.092 [3.029, 3.154]               & 3.085 [3.067, 3.104] & 2.801 [2.782, 2.820] \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_pretrained_emobank}.}
+\label{tab:results_clm_gpt2_pretrained_emobank_outcome}
 \end{table}
 
 \newpage
@@ -658,7 +1221,7 @@ We construct t-SNE plots of MPNet, BERT \cite{devlin2019bert}, and GPT-2 embeddi
         Violation & 70.369 & 69.985 & \textcolor{green!50!black}{0.384} & [-2.515, 3.282] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from Reformer fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
+    \caption{(HK) Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from Reformer fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
     \label{tab:results_clm_reformer}
 \end{table}
 
@@ -677,7 +1240,7 @@ We construct t-SNE plots of MPNet, BERT \cite{devlin2019bert}, and GPT-2 embeddi
         Violation & 70.166 & 69.63 & \textcolor{green!50!black}{0.536} & [-2.381, 3.453] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from TransformerXL fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
+    \caption{(HK) Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from TransformerXL fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
     \label{tab:results_clm_transformerxl}
 \end{table}
 
@@ -767,7 +1330,7 @@ These results use the old randomization corpus generation method, which did not 
         Violation & 66.729 & 69.255 & \textcolor{red!80!black}{-2.526} & [-11.122, 6.070] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet.}
+    \caption{(HK) Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet.}
     \label{tab:results_clf1_old}
 \end{table}
 
@@ -786,7 +1349,7 @@ These results use the old randomization corpus generation method, which did not 
         Violation & 65.028 & 65.210 & \textcolor{red!80!black}{-0.182} & [-12.003, 11.638] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Text probabilities are computed from marginal sentence probabilities.}
+    \caption{(HK) Treatment effect estimates using the classification approach, where the classifier is a logistic regression model learned over embeddings from pre-trained MPNet. Text probabilities are computed from marginal sentence probabilities.}
     \label{tab:results_clf2_old}
 \end{table}
 
@@ -805,7 +1368,7 @@ These results use the old randomization corpus generation method, which did not 
         Violation & 65.902 & 67.332 & \textcolor{red!80!black}{-1.429} & [-4.691, 1.832] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
+    \caption{(HK) Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned with a CLM task on a small number of held-out samples from $P^T$.}
     \label{tab:results_lm2_old}
 \end{table}
 
@@ -824,7 +1387,7 @@ These results use the old randomization corpus generation method, which did not 
         Violation & 66.283 & 67.180 & \textcolor{red!80!black}{-0.898} & [-4.169, 2.374] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Text probabilities are computed from marginal sentence probabilities.}
+    \caption{(HK) Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained GPT-2. Text probabilities are computed from marginal sentence probabilities.}
     \label{tab:results_lm3_old}
 \end{table}
 
@@ -843,7 +1406,7 @@ These results use the old randomization corpus generation method, which did not 
         Violation & 69.236 & 68.102 & \textcolor{green!50!black}{1.134} & [-10.067, 12.336] \\
         \bottomrule
     \end{tabular}
-    \caption{Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained BERT. \vl{This is an improper approach since models trained with MLM, e.g. BERT, can't be used to estimate sentence probabilities directly.}}
+    \caption{(HK) Treatment effect estimates using the language modeling approach, where text probabilities under $P^T$ are estimated from pre-trained BERT. \vl{This is an improper approach since models trained with MLM, e.g. BERT, can't be used to estimate sentence probabilities directly.}}
     \label{tab:results_lm1_bert}
 \end{table}
 
