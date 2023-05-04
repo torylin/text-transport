@@ -401,6 +401,19 @@ This dataset contains Amazon reviews of musical instruments and office products,
 
 As with the Amazon music reviews dataset, this dataset can be used for validation. $P^R$ and $P^T$ are obtained by splitting on the product category of the review. Again, we parameterize the text to obtain interpretable $g(X), h(X)$ using LIWC and Empath.
 
+\subsubsection{A ``contrived'' setting}
+\label{sec:contrived_data}
+
+To ensure that our method works in the most controlled circumstances, we construct a very simple setting. Again using Amazon reviews of musical instruments and office products, we synthesize a label that is a noisy function (i.e., linear model prediction plus Gaussian noise) of the top 10 most predictive LIWC categories \textit{only}. Next, we split the reviews into $P^R$ and $P^T$ by fitting a classifier of music vs. text reviews, again as only a function of the same 10 LIWC categories. We sample $P^R$ and $P^T$ using the predicted probabilities of the classifier. Finally, we retain these predicted probabilities to use as $P(C=T|X)$ and $P(C=R|X)$ in our imporance weights.
+
+Importantly, this construction ensures that
+\begin{itemize}
+    \item Both our label and our $P^R$/$P^T$ split are dependent on only the 10 lexical features (and, of course, the Gaussian noise).
+    \item Our importance weights are ``known.'' 
+\end{itemize}
+
+Therefore, this simple synthetic dataset allows us to test whether our method works in its most basic, controlled setting where all confounding is accounted for and importance weights are known to be correct. If the method works (i.e., we can validate that $\hat{\mu}_{R \rightarrow T} \approx \hat{\mu}_T$) under these conditions, then we know that in other settings where the effect is not validated, the source of error is due to estimation or engineering rather than problems with the method itself.
+
 \subsubsection{EmoBank}
 \label{sec:emobank_data_description}
 
@@ -784,8 +797,78 @@ We report our treatment effect estimates using the language modeling approach de
     Outcome & 1.057 [0.984, 1.131]               & 1.367 [1.275, 1.460] & 1.196 [1.113, 1.278] \\
 \bottomrule
 \end{tabular}
-\caption{(Lexicon-only sanity check) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic_lexonly}.}
+\caption{(Lexicon-only sanity check) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic_lexonly_dr}.}
 \label{tab:results_clf_mpnet_amazon_synthetic_lexonly_dr_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   & $\hat{\mu}(P_1)$        & $\hat{\mu}(P_0)$        & $\hat{\tau}_{R \rightarrow T}$   \\
+\midrule
+    sexual      & 5.599 [5.464, 5.738]    & 5.812 [5.672, 5.941]    & 6.024 [5.860, 6.193]             \\
+    female      & 4.826 [4.690, 4.966]    & 5.098 [4.963, 5.225]    & 4.713 [4.587, 4.840]             \\
+    filler      & 4.884 [4.727, 5.035]    & 5.200 [5.041, 5.344]    & 6.499 [6.303, 6.711]             \\
+    netspeak    & 4.177 [4.080, 4.277]    & 4.444 [4.349, 4.546]    & 4.800 [4.668, 4.939]             \\
+    home        & 4.066 [4.002, 4.138]    & 4.213 [4.150, 4.281]    & 4.130 [4.059, 4.205]             \\
+    informal    & 1.491 [1.435, 1.548]    & 1.759 [1.701, 1.814]    & 1.418 [1.355, 1.476]             \\
+    shehe       & -0.381 [-0.496, -0.256] & 0.009 [-0.098, 0.129]   & 0.766 [0.657, 0.886]             \\
+    nonflu      & 1.737 [1.670, 1.799]    & 1.939 [1.871, 1.999]    & 1.611 [1.543, 1.680]             \\
+    assent      & 2.107 [2.036, 2.180]    & 2.364 [2.292, 2.436]    & 2.004 [1.919, 2.096]             \\
+    death       & -1.150 [-1.277, -1.032] & -0.746 [-0.868, -0.624] & -1.109 [-1.280, -0.939]          \\
+\bottomrule
+\end{tabular}
+\caption{(Lexicon-only sanity check, bootstrap) Treatment effect estimates using the classification approach, where the classifier is a logistic regression learned over binary encodings of LIWC categories. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products. We use a doubly robust estimator and obtain the confidence intervals by bootstrap resampling noise for the synthetic label.}
+\label{tab:results_clf_mpnet_amazon_synthetic_lexonly_dr_bootstrap}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 1.047 [1.018, 1.077]               & 1.372 [1.344, 1.402] & 1.204 [1.177, 1.232] \\
+\bottomrule
+\end{tabular}
+\caption{(Lexicon-only sanity check, bootstrap) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_amazon_synthetic_lexonly_dr_bootstrap}.}
+\label{tab:results_clf_mpnet_amazon_synthetic_lexonly_dr_bootstrap_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   & $\hat{\mu}(P_1)$        & $\hat{\mu}(P_0)$        & $\hat{\tau}_{R \rightarrow T}$   \\
+\midrule
+    sexual      & 6.040 [5.861, 6.206]    & 6.178 [6.004, 6.334]    & 6.130 [5.924, 6.321]             \\
+    female      & 4.515 [4.378, 4.668]    & 4.824 [4.684, 4.981]    & 4.713 [4.574, 4.842]             \\
+    filler      & 5.324 [5.159, 5.483]    & 5.507 [5.341, 5.653]    & 5.492 [5.272, 5.722]             \\
+    netspeak    & 4.694 [4.590, 4.810]    & 4.787 [4.682, 4.901]    & 4.629 [4.490, 4.767]             \\
+    home        & 3.987 [3.905, 4.071]    & 4.216 [4.135, 4.298]    & 4.051 [3.974, 4.135]             \\
+    informal    & 1.449 [1.383, 1.518]    & 1.778 [1.710, 1.846]    & 1.392 [1.329, 1.456]             \\
+    shehe       & 0.668 [0.528, 0.807]    & 0.560 [0.433, 0.695]    & 0.311 [0.172, 0.433]             \\
+    nonflu      & 1.751 [1.667, 1.827]    & 2.110 [2.030, 2.181]    & 1.614 [1.543, 1.690]             \\
+    assent      & 2.078 [1.994, 2.158]    & 2.192 [2.106, 2.271]    & 2.104 [2.022, 2.204]             \\
+    death       & -1.234 [-1.391, -1.079] & -0.890 [-1.040, -0.742] & -1.153 [-1.307, -0.981]          \\
+\bottomrule
+\end{tabular}
+\caption{(``Contrived'' setting, bootstrap) Treatment effect estimates using the classification approach, where the classifier is a logistic regression learned over binary encodings of LIWC categories. $P^R$ and $P^T$ are as defined in Section \ref{sec:contrived_data}. We use a doubly robust estimator (we note that this produces exactly the same results as a difference-in-means estimator) and obtain the confidence intervals by bootstrap resampling noise for the synthetic label.}
+\label{tab:results_clf_liwc_contrived_bootstrap}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 1.163 [1.130, 1.196]               & 1.365 [1.334, 1.399] & 1.189 [1.160, 1.221] \\
+\bottomrule
+\end{tabular}
+\caption{(``Contrived'' setting, bootstrap) Outcome estimates for the effects in Table \ref{tab:results_clf_liwc_contrived_bootstrap}.}
+\label{tab:results_clf_liwc_contrived_bootstrap_outcome}
 \end{table}
 
 \newpage
@@ -1036,6 +1119,42 @@ We report our treatment effect estimates using the language modeling approach de
     \label{tab:results_clm_gpt2_amazon_synthetic_interaction_outcome}
 \end{table}
 
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$        & $\hat{\tau}_T$         \\
+\midrule
+    sexual      &             15.776 &              7.816 & 7.960 [5.373, 10.548]            & 7.677 [5.050, 10.304] & 10.470 [6.424, 14.516] \\
+    female      &             15.818 &              7.815 & 8.003 [6.448, 9.559]             & 8.021 [6.172, 9.870]  & 6.104 [4.825, 7.383]   \\
+    filler      &             15.188 &              7.904 & 7.284 [5.036, 9.532]             & 7.373 [4.922, 9.825]  & 12.269 [8.018, 16.520] \\
+    netspeak    &             14.175 &              7.598 & 6.578 [5.206, 7.949]             & 6.759 [5.252, 8.267]  & 9.176 [6.842, 11.510]  \\
+    home        &             13.45  &              6.843 & 6.608 [5.882, 7.334]             & 6.564 [5.801, 7.327]  & 6.756 [5.997, 7.514]   \\
+    informal    &             10.388 &              6.002 & 4.386 [3.953, 4.818]             & 4.328 [3.896, 4.759]  & 4.369 [3.891, 4.847]   \\
+    shehe       &             11.523 &              7.951 & 3.572 [2.291, 4.853]             & 3.588 [2.304, 4.872]  & 2.464 [1.453, 3.475]   \\
+    nonflu      &             11.183 &              6.929 & 4.254 [3.632, 4.876]             & 4.187 [3.571, 4.803]  & 4.160 [3.540, 4.780]   \\
+    assent      &             12.255 &              7.23  & 5.025 [4.363, 5.688]             & 5.075 [4.377, 5.773]  & 4.436 [3.622, 5.251]   \\
+    death       &             10.759 &              8.033 & 2.726 [1.549, 3.903]             & 2.856 [1.624, 4.089]  & 2.399 [0.688, 4.109]   \\
+\bottomrule
+    \end{tabular}
+    \caption{(Amazon, interaction) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned on $P^T$ and text probabilities under $P^R$ are estimated from GPT-2 fine-tuned on $P^R$. Here, $P^R$ is the distribution of Amazon reviews for musical instrument purchases, while $P^T$ is the distribution of Amazon reviews for office products.}
+    \label{tab:results_clm_gpt2_finetuned_amazon_synthetic_interaction_ptpr}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 8.185 [7.959, 8.410]               & 8.150 [7.935, 8.364] & 8.817 [8.615, 9.019] \\
+\bottomrule
+    \end{tabular}
+    \caption{Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_finetuned_amazon_synthetic_interaction_ptpr}.}
+    \label{tab:results_clm_gpt2_finetuned_amazon_synthetic_interaction_outcome_ptpr}
+\end{table}
+
+
 \newpage
 \subsubsection{EmoBank: Classification approach}
 
@@ -1069,6 +1188,38 @@ We report our treatment effect estimates using the language modeling approach de
 \end{tabular}
 \caption{(EmoBank) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_emobank}.}
 \label{tab:results_clf_mpnet_emobank_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
+\midrule
+    posemo & 3.078 &              2.746             & 0.332 [0.291, 0.369]             & 0.343 [0.317, 0.366]    & 0.317 [0.290, 0.344]    \\
+    negemo & 2.58  &              2.966             & -0.386 [-0.424, -0.347]          & -0.422 [-0.456, -0.389] & -0.354 [-0.378, -0.330] \\
+    anx & 2.576 &              2.872                & -0.297 [-0.385, -0.209]          & -0.392 [-0.464, -0.322] & -0.269 [-0.313, -0.230] \\
+    nonflu & 3.044 &              2.852             & 0.193 [0.086, 0.304]             & 0.133 [0.059, 0.211]    & 0.170 [0.076, 0.250]    \\
+    3.069 &              2.855 & filler             & 0.214 [0.132, 0.353]             & -0.011 [-0.095, 0.119]  & 0.228 [0.193, 0.311]    \\
+    home & 2.851 &              2.855              & -0.004 [-0.088, 0.088]           & 0.044 [0.001, 0.090]    & 0.021 [-0.027, 0.075]   \\
+    assent & 3.114 &              2.852             & 0.262 [0.105, 0.427]             & 0.221 [0.117, 0.327]    & 0.201 [0.058, 0.340]    \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Treatment effects using the classification approach, where the classifier is a logistic regression learned over pre-trained MPNet embeddings. $P^R$ is the distribution of sentences with high writer-intended valence, and $P^T$ is the distribution of sentences with low writer-intended valence. The measured outcome $Y$ is reader-perceived valence. We obtain confidence intervals by bootstrap resampling $P^R$ and $P^T$ probabilistically, according to the heuristic used to sample the original $P^R$ and $P^T$.}
+\label{tab:results_clf_mpnet_emobank_boot}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 2.855 [2.835, 2.873]               & 3.085 [3.074, 3.098] & 2.796 [2.784, 2.809] \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Outcome estimates for the effects in Table \ref{tab:results_clf_mpnet_emobank}.}
+\label{tab:results_clf_mpnet_emobank_boot_outcome}
 \end{table}
 
 \newpage
@@ -1168,6 +1319,38 @@ We report our treatment effect estimates using the language modeling approach de
 \end{tabular}
 \caption{(EmoBank) Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_pretrained_emobank}.}
 \label{tab:results_clm_gpt2_pretrained_emobank_outcome}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccccc}
+\toprule
+    Treatment   &   $\hat{\mu}(P_1)$ &   $\hat{\mu}(P_0)$ & $\hat{\tau}_{R \rightarrow T}$   & $\hat{\tau}_R$          & $\hat{\tau}_T$          \\
+\midrule
+    posemo      &              3.279 &              2.94  & 0.339 [0.246, 0.433]             & 0.352 [0.314, 0.390]    & 0.323 [0.280, 0.367]    \\
+    negemo      &              2.767 &              3.152 & -0.384 [-0.505, -0.264]          & -0.399 [-0.458, -0.340] & -0.375 [-0.418, -0.333] \\
+    anx         &              2.692 &              3.096 & -0.404 [-0.673, -0.136]          & -0.439 [-0.580, -0.298] & -0.276 [-0.359, -0.192] \\
+    nonflu      &              3.25  &              3.079 & 0.171 [-0.237, 0.579]            & 0.159 [0.046, 0.273]    & 0.178 [0.043, 0.313]    \\
+    filler      &              3.056 &              3.083 & -0.027 [-0.623, 0.570]           & -0.019 [-0.129, 0.092]  & 0.199 [-0.191, 0.588]   \\
+    home        &              3.122 &              3.08  & 0.043 [-0.146, 0.232]            & 0.056 [-0.018, 0.130]   & 0.048 [-0.027, 0.124]   \\
+    assent      &              3.301 &              3.08  & 0.221 [-0.121, 0.564]            & 0.239 [0.057, 0.421]    & 0.332 [0.110, 0.554]    \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Treatment effects using the language modeling approach, where text probabilities under $P^T$ are estimated from GPT-2 fine-tuned on $P^T$ and text probabilities under $P^R$ are estimated from GPT-2 fine-tuned on $P^R$. $P^R$ is the distribution of sentences with high writer-intended valence, and $P^T$ is the distribution of sentences with low writer-intended valence. The measured outcome $Y$ is reader-perceived valence.}
+\label{tab:results_clm_gpt2_finetuned_emobank_ptpr}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|cccc}
+\toprule
+    & $\hat{\mu}(P_{R \rightarrow T})$   & $\hat{\mu}(P_R)$     & $\hat{\mu}(P_T)$     \\
+\midrule
+    Outcome & 3.083 [3.036, 3.129]               & 3.085 [3.067, 3.104] & 2.801 [2.782, 2.820] \\
+\bottomrule
+\end{tabular}
+\caption{(EmoBank) Outcome estimates for the effects in Table \ref{tab:results_clm_gpt2_finetuned_emobank_ptpr}.}
+\label{tab:results_clm_gpt2_finetuned_emobank_outcome_ptpr}
 \end{table}
 
 \newpage
