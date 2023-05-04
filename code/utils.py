@@ -8,25 +8,36 @@ from datasets import Dataset
 from torch.utils.data import DataLoader
 from empath import Empath
 import pdb
+import os
 import pandas as pd
 from sklearn.linear_model import LinearRegression, ElasticNet
 from sklearn.metrics import r2_score
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+import liwc
 
-def get_embeds(sentences, tokenizer, model, device):
+def get_embeds(sentences, tokenizer, model, device, progress=True):
     tokens = tokenizer(sentences, return_tensors='pt', padding=True, truncation=True)
     ds = Dataset.from_dict(tokens).with_format('torch')
     dataloader = DataLoader(ds, batch_size=16, shuffle=False)
     embeds_list = []
-    for batch in tqdm(dataloader):
-        for key in batch.keys():
-            batch[key] = batch[key].to(device)
-        with torch.no_grad():
-            outputs = model(**batch)
-        out = outputs.last_hidden_state.mean(axis=1)
-        embeds_list.append(out.detach().cpu())
-
+    if progress:
+        for batch in tqdm(dataloader):
+            for key in batch.keys():
+                batch[key] = batch[key].to(device)
+            with torch.no_grad():
+                outputs = model(**batch)
+            out = outputs.last_hidden_state.mean(axis=1)
+            embeds_list.append(out.detach().cpu())
+    else:
+        for batch in dataloader:
+            for key in batch.keys():
+                batch[key] = batch[key].to(device)
+            with torch.no_grad():
+                outputs = model(**batch)
+            out = outputs.last_hidden_state.mean(axis=1)
+            embeds_list.append(out.detach().cpu())
+            
     embeds = np.vstack(embeds_list)
     
     return embeds
@@ -65,8 +76,8 @@ def get_unnoised_labels(df0, df1, prob_df0, prob_df1, combination_type, lexicon_
     X = df.drop(['reviewText', 'helpful'], axis=1)
     y = df['helpful'].values
 
-    # model = LinearRegression()
-    model = ElasticNet(l1_ratio=0.5)
+    model = LinearRegression()
+    # model = ElasticNet(l1_ratio=0.5)
     model.fit(X, y)
 
     features = pd.DataFrame({'feature': X.columns.tolist(), 'coef': model.coef_})
@@ -114,9 +125,54 @@ def get_unnoised_labels(df0, df1, prob_df0, prob_df1, combination_type, lexicon_
 
     return (label_synth0, label_synth1)
 
-def noise_labels(label_synth0, label_synth1, mu=0, sigma=1, seed=230418):
+def noise_labels(label_synth0, label_synth1=None, mu=0, sigma=1, seed=230418):
     np.random.seed(seed)
     noise0 = np.random.normal(mu, sigma, len(label_synth0))
-    noise1 = np.random.normal(mu, sigma, len(label_synth1))
+    if label_synth1 is not None:
+        noise1 = np.random.normal(mu, sigma, len(label_synth1))
 
-    return (noise0, noise1)
+        return (noise0, noise1)
+    return noise0
+
+def emobank_sample(data_dir='/home/victorialin/Documents/2022-2023/causal_text/data/emobank/',
+                   outcome='V_writer', outcome_reader='V_reader', outcome_name='valence',
+                   seedhigh=230425, seedlow=102938):
+    
+    emobank = pd.read_csv(os.path.join(data_dir, 'emobank.csv'))
+    df_writer = pd.read_csv(os.path.join(data_dir, 'writer.csv'))
+    df_reader = pd.read_csv(os.path.join(data_dir, 'reader.csv'))
+
+    emobank.columns = ['id', 'split', 'V_combined', 'A_combined', 'D_combined', 'text']
+    
+    df_writer.drop(['stdV', 'stdA', 'stdD', 'N'], axis=1, inplace=True)
+    df_writer.columns = ['id', 'V_writer', 'A_writer', 'D_writer']
+
+    df_reader.drop(['stdV', 'stdA', 'stdD', 'N'], axis=1, inplace=True)
+    df_reader.columns = ['id', 'V_reader', 'A_reader', 'D_reader']
+
+    df_combined = emobank.merge(df_writer.merge(df_reader, on='id'), on='id')
+
+    writer_median = df_combined[outcome].median()
+
+    df_combined = df_combined[df_combined[outcome] != writer_median].reset_index(drop=True)
+
+    df_combined['P(V>3)'] = 0.2
+    df_combined['P(V<3)'] = 0.2
+    df_combined.loc[df_combined[outcome] > writer_median, 'P(V>3)'] = 0.8
+    df_combined.loc[df_combined[outcome] < writer_median, 'P(V<3)'] = 0.8
+
+    df_highwriterintent = df_combined.sample(n=5000, replace=True, weights='P(V>3)', random_state=seedhigh)
+    df_lowwriterintent = df_combined.sample(n=5000, replace=True, weights='P(V<3)', random_state=seedlow)
+
+    return (df_combined, df_highwriterintent, df_lowwriterintent)
+
+def get_liwc_df(df, text_col, outcome):
+    parse, category_names = liwc.load_token_parser('/home/victorialin/Documents/liwc_dict/LIWC2015_English_Flat.dic')
+    df['label_count'] = df[text_col].apply(get_liwc_labels, args=(category_names, parse, True))
+
+    count_df = pd.DataFrame(np.stack(df['label_count'].values, axis=0), columns=category_names)
+
+    count_df[text_col] = df[text_col].values
+    count_df[outcome] = df[outcome].values
+
+    return count_df

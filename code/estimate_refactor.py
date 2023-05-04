@@ -52,7 +52,7 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--train-size', type=float, default=0.1)
     parser.add_argument('--bootstrap-iters', type=int, default=0)
-    parser.add_argument('--combination-type', type=str)
+    # parser.add_argument('--combination-type', type=str)
     parser.add_argument('--lexicon-weight', type=float)
     parser.add_argument('--embedding-weight', type=float)
     parser.add_argument('--marginal-probs', action='store_true')
@@ -142,12 +142,12 @@ def get_var_lm(idx, df, weights, y_mean, args):
 
     return val
 
-def get_embeds_clf(lm_library, lm_name, device, sentences, progress=True):
+def get_embeds_clf(lm_library, lm_name, device, sentences):
 
     if lm_library == 'sentence-transformers':
         model = SentenceTransformer(lm_name)
         model.to(device)
-        embeds = model.encode(sentences, show_progress_bar=progress)
+        embeds = model.encode(sentences, show_progress_bar=True)
 
     elif lm_library == 'transformers':
         tokenizer = AutoTokenizer.from_pretrained(lm_name, max_length=512, truncation=True)
@@ -171,7 +171,6 @@ def get_embeds_clf(lm_library, lm_name, device, sentences, progress=True):
             embeds[embeds > 1] = 1
     
     return embeds
-    
 
 def get_estimate(df, df_random_train, treatment='a'):
 
@@ -230,13 +229,13 @@ def get_estimate(df, df_random_train, treatment='a'):
             a_train = df_random_train[treatment].values.flatten()
             mu1_model.fit(train_embeds[a_train==1], df_random_train[a_train==1][args.outcome].values.flatten())
             mu0_model.fit(train_embeds[a_train==0], df_random_train[a_train==0][args.outcome].values.flatten())
-            mu1 = np.sum((weights1*(y-mu1_model.predict(embeds_r)))[a==1])/n1 + np.nanmean(mu1_model.predict(embeds_t))
-            mu0 = np.sum((weights0*(y-mu0_model.predict(embeds_r)))[a==0])/n0 + np.nanmean(mu0_model.predict(embeds_t))
+            mu1 = np.sum((weights1*(y-mu1_model.predict(embeds_r)))[a==1])/n1 + np.mean(mu1_model.predict(embeds_t))
+            mu0 = np.sum((weights0*(y-mu0_model.predict(embeds_r)))[a==0])/n0 + np.mean(mu0_model.predict(embeds_t))
             # print('mu1 model R^2: {:.3f}'.format(mu1_model.score(embeds_r[a==1], y[a==1])))
             # print('mu0 model R^2: {:.3f}'.format(mu0_model.score(embeds_r[a==0], y[a==0])))
 
         mu_model.fit(train_embeds, df_random_train[args.outcome].values.flatten())
-        mu = np.sum(weights*(y-mu_model.predict(embeds_r)))/n + np.nanmean(mu_model.predict(embeds_t))
+        mu = np.sum(weights*(y-mu_model.predict(embeds_r)))/n + np.mean(mu_model.predict(embeds_t))
         # print('mu model R^2: {:.3f}'.format(mu_model.score(embeds_r, y)))
 
     if not treatment == 'none':
@@ -250,11 +249,11 @@ def get_estimate(df, df_random_train, treatment='a'):
                 var_list1 = (((weights1*y)-mu1_model.predict(embeds_r))[a==1])**2
             # idxs1 = list(itertools.product(df_random_test[df_random_test[args.treatment]==1].index, df_random_test[df_random_test[args.treatment]==1].index))
             # var_list1 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights1, 
-            #                                       y_mean=np.nanmean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
+            #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==1]['resp'].values)), tqdm(idxs1))))
             varhat1 = np.sum(var_list1)/(n1**2)
             # idxs0 = list(itertools.product(df_random_test[df_random_test[args.treatment]==0].index, df_random_test[df_random_test[args.treatment]==0].index))
             # var_list0 = np.array(list(map(partial(get_var_clf, df=df_random_test, weights=weights0,
-            #                                       y_mean=np.nanmean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
+            #                                       y_mean=np.mean(df_random_test[df_random_test[args.treatment]==0]['resp'].values)), tqdm(idxs0))))
             if args.estimate == 'diff':
                 var_list0 = ((weights0*y)[a==0]-mu0)**2
             elif args.estimate == 'dr':
@@ -289,35 +288,36 @@ args = get_args()
 # df_random = pd.read_csv(os.path.join(args.data_dir, 'hk_rct', 'HKData.csv'))
 df_random = pd.read_csv(os.path.join(args.data_dir, args.random_csv))
 df_target = pd.read_csv(os.path.join(args.data_dir, args.target_csv))
+df_combined = pd.concat([df_random, df_target], axis=0)
+sentences = df_combined[args.text_col].values
+labels0 = np.array([0]*df_random.shape[0])
+labels1 = np.array([1]*df_target.shape[0])
 
-# df_random_corp = pd.read_pickle(os.path.join(args.data_dir, 'hk_rct', 'randomization_corpus_random_sample.pkl'))
-# if args.treatment == 'treatycommit':
-#     treat_prob = df_random_corp['treatyobligation'].mean()
-# else:
-#     treat_prob = df_random_corp[args.treatment].mean()
+df_random_train, df_random_test, labels0_train, labels0_test = train_test_split(df_random, labels0, train_size=args.train_size, random_state=args.seed, shuffle=True)
+df_target_train, df_target_test, labels1_train, labels1_test = train_test_split(df_target, labels1, train_size=args.train_size, random_state=args.seed, shuffle=True)
 
-sentences = np.hstack([df_random[args.text_col].values, df_target[args.text_col].values])
-labels = np.array([0]*df_random.shape[0] + [1]*df_target.shape[0])
-sentences, labels = shuffle(sentences, labels, random_state=args.seed)
-y_train, y_test, sentence_train, sentence_test = train_test_split(labels, sentences, train_size=args.train_size, random_state=args.seed)
 if args.method == 'clf':
-    X_train = get_embeds_clf(args.lm_library, args.lm_name, device, sentence_train)
-        
-train_df = pd.DataFrame({args.text_col: sentence_train})
-test_df = pd.DataFrame({args.text_col: sentence_test})
-df_random_test = pd.merge(df_random, test_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-df_target_test = pd.merge(df_target, test_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-df_random_train = pd.merge(df_random, train_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-df_target_train = pd.merge(df_target, train_df, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
+    embeds = get_embeds_clf(args.lm_library, args.lm_name, device, sentences)
+
+    embeds_train = np.vstack([embeds[df_random_train.index], embeds[df_random.shape[0]-1+df_target_train.index]])
+    y_train = np.hstack([labels0_train, labels1_train])
+
+pdb.set_trace()
 
 df = df_random_test
 df_t = df_target_test
 pr_x = 1/df.shape[0]
 
-if args.estimate == 'dr':
-    train_embeds = get_embeds_clf(args.outcome_lm_library, args.outcome_lm_name, device, df_random_train[args.text_col].values)
-    embeds_r = get_embeds_clf(args.outcome_lm_library, args.outcome_lm_name, device, df[args.text_col].values)
-    embeds_t = get_embeds_clf(args.outcome_lm_library, args.outcome_lm_name, device, df_t[args.text_col].values)
+if args.estimate == 'dr': 
+    if args.outcome_lm_library == args.lm_library and args.outcome_lm_name == args.lm_name and args.method == 'clf':
+        outcome_embeds = embeds
+    else:
+        outcome_embeds = get_embeds_clf(args.outcome_lm_library, args.outcome_lm_name, device, sentences)
+   
+    train_embeds = outcome_embeds[df_random_train.index]
+    embeds_r = outcome_embeds[df.index]
+    embeds_t = outcome_embeds[df_random.shape[0]+df_t.index]
+
             
 if args.save_csvs:
     df_random_train.to_csv(os.path.join(args.data_dir, 'random_train.csv'), index=False)
@@ -394,7 +394,6 @@ if args.method == 'mlm' or args.method == 'clm':
     if args.pr_lm_name is not None:
         norm_sum_pr = np.sum(all_probs_pr)
 
-
 elif args.method == 'clf':
 
     if args.clf == 'lr':
@@ -410,10 +409,10 @@ elif args.method == 'clf':
         clf = LogisticRegressionCV(cv=5, random_state=args.seed, penalty='elasticnet', solver='saga', l1_ratios=[0.5]*5, max_iter=10000)
     if args.scale:
         scaler = StandardScaler()
-        scaler.fit(X_train)
-        clf.fit(scaler.transform(X_train), y_train)
+        scaler.fit(embeds_train)
+        clf.fit(scaler.transform(embeds_train), y_train)
     else:
-        clf.fit(X_train, y_train)
+        clf.fit(embeds_train, y_train)
     if args.marginal_probs:
         prob_list = []
         for sent_group in tqdm(df[args.text_col].values):
@@ -422,11 +421,7 @@ elif args.method == 'clf':
     elif args.existing_probs:
         probs = df[['pr','pt']].values
     else:
-        if args.estimate == 'dr':
-            test_embeds = embeds_r
-        else:
-            test_embeds = get_embeds_clf(args.lm_library, args.lm_name, device, df[args.text_col].values)
-
+        test_embeds = embeds[df.index]
         if args.scale:
             probs = clf.predict_proba(scaler.transform(test_embeds))
         else:
@@ -451,11 +446,11 @@ headers = ['Treatment'] + headers
 
 
 if args.validate:
-    mu_r = np.nanmean(df[args.outcome].values)
-    mu_t = np.nanmean(df_t[args.outcome].values)
+    mu_r = np.mean(df[args.outcome].values)
+    mu_t = np.mean(df_t[args.outcome].values)
     if args.ci:
-        varhat_overall_r = np.sum((df[args.outcome].values-np.nanmean(df[args.outcome].values))**2)/(df.shape[0]**2)
-        varhat_overall_t = np.sum((df_t[args.outcome].values-np.nanmean(df_t[args.outcome].values))**2)/(df_t.shape[0]**2)
+        varhat_overall_r = np.sum((df[args.outcome].values-np.mean(df[args.outcome].values))**2)/(df.shape[0]**2)
+        varhat_overall_t = np.sum((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))**2)/(df_t.shape[0]**2)
 
 rows = []
 
@@ -463,6 +458,21 @@ if args.treatment != ['none']:
     if args.treatment == ['all']:
         treatments = ['treatycommit', 'brave', 'evil', 'flag', 'threat', 'economy', 'treatyviolation']
         treatment_names = ['Commitment', 'Bravery', 'Mistreatment', 'Flags', 'Threat', 'Economy', 'Violation']
+    elif args.treatment == ['automatic']:
+        treatment_clf = LogisticRegressionCV(cv=5, random_state=args.seed, max_iter=10000)
+        # reg = LinearRegression()
+        # train_embeds = get_embeds(pd.concat([df_random_train, df_target_train], axis=0)[args.text_col].values.astype(str).tolist(), tokenizer, model, device)
+        # y_train = pd.concat([df_random_train, df_target_train], axis=0).V_reader
+        # reg.fit(train_embeds, y_train)
+        # test_embeds = get_embeds(df[args.text_col].values.astype(str).tolist(), tokenizer, model, device)
+        # print(reg.score(test_embeds, df.V_reader))
+        # pdb.set_trace()
+        df_combined_train = pd.concat([df_random_train, df_target_train], axis=1)
+        df_combined_train.drop([args.outcome], inplace=True)
+        treatment_clf.fit(df_combined_train, y_train)
+        features = pd.DataFrame({'feature': df_combined_train.columns.tolist(), 'coef': treatment_clf.coef_})
+        features = features.reindex(features.coef.abs().sort_values(ascending=False).index)
+        treatments = features['feature'][0:10].values
     else:
         treatments = args.treatment
         treatment_names = args.treatment
@@ -480,13 +490,16 @@ if args.bootstrap_iters > 0:
             tau_t_dict = {treatment: np.zeros(args.bootstrap_iters) for treatment in treatments}
 
         mu_list = np.zeros(args.bootstrap_iters)
-
+    
     if 'amazon_synthetic' in args.data_dir:
         label_synth0_unnoised = df_random['label_synthetic_unnoised'].values
         label_synth1_unnoised = df_target['label_synthetic_unnoised'].values
-        
-    for iter in tqdm(range(args.bootstrap_iters)):
 
+    if 'emobank' in args.data_dir:
+        df_combined_emobank, _, _ = emobank_sample()
+        combined_emobank_embeds = get_embeds_clf(args.lm_library, args.lm_name, device, df_combined_emobank[args.text_col].values)
+
+    for iter in tqdm(range(args.bootstrap_iters)):
         if 'amazon_synthetic' in args.data_dir:
             noise0, noise1 = noise_labels(label_synth0_unnoised, label_synth1_unnoised, seed=iter, sigma=1.0)
 
@@ -495,43 +508,30 @@ if args.bootstrap_iters > 0:
             df_random_boot[args.outcome] = label_synth0_unnoised + noise0
             df_target_boot[args.outcome] = label_synth1_unnoised + noise1
 
+            df_boot = df_random_boot.iloc[df.index,:]
+            df_t_boot = df_target_boot.iloc[df_t.index,:]
+
+            df_random_train_boot = df_random_boot.iloc[df_random_train.index,:]
+
         elif 'emobank' in args.data_dir:
             _, df_random_boot, df_target_boot = emobank_sample(seedhigh=iter, seedlow=iter)
-            df_random_boot = get_liwc_df(df_random_boot, args.text_col, args.outcome)
-            df_target_boot = get_liwc_df(df_target_boot, args.text_col, args.outcome)
+            df_random_train_boot, df_boot, _, df_t_boot = train_test_split(df_random_boot, df_target_boot, train_size=args.train_size, random_state=args.seed, shuffle=True)
 
-            sentences_boot = np.hstack([df_random_boot[args.text_col].values, df_target_boot[args.text_col].values])
-            sentences_boot = shuffle(sentences_boot, random_state=args.seed)
-            sentence_train_boot, sentence_test_boot = train_test_split(sentences_boot, train_size=args.train_size, random_state=args.seed)
-                    
-            train_df_boot = pd.DataFrame({args.text_col: sentence_train_boot})
-            test_df_boot = pd.DataFrame({args.text_col: sentence_test_boot})
-
-        df_boot = pd.merge(df_random_boot, test_df_boot, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-        df_t_boot = pd.merge(df_target_boot, test_df_boot, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-        df_random_train_boot = pd.merge(df_random_boot, train_df_boot, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-        df_target_train_boot = pd.merge(df_target_boot, train_df_boot, on=[args.text_col], how='inner').drop_duplicates(subset=[args.text_col]).reset_index(drop=True)
-
-        if 'emobank' in args.data_dir:
-            if args.method == 'clf':
-                boot_embeds = get_embeds_clf(args.lm_library, args.lm_name, device, df_boot[args.text_col].values, False)
-
-                if args.scale:
-                    probs = clf.predict_proba(scaler.transform(boot_embeds))
-                else:
-                    probs = clf.predict_proba(boot_embeds)
-            elif args.method == 'mlm' or args.method == 'clm':
-                tokens = tokenizer(df_boot[args.text_col].astype(str).values.tolist(), return_tensors='pt', padding=True, truncation=True)
-                ds = Dataset.from_dict(tokens).with_format('torch')
-                dataloader = DataLoader(ds, batch_size=args.batch_size, shuffle=False)
-
-                all_probs = get_prob_lm(dataloader, model)
-
+            boot_embeds = combined_emobank_embeds[df_boot.index]
+            if args.scale:
+                probs = clf.predict_proba(scaler.transform(boot_embeds))
+            else:
+                probs = clf.predict_proba(boot_embeds)
+    
         if args.validate:
-            mu_r_list[iter] = np.nanmean(df_boot[args.outcome].values)
-            mu_t_list[iter] = np.nanmean(df_t_boot[args.outcome].values)
+            mu_r_list[iter] = np.mean(df_boot[args.outcome].values)
+            mu_t_list[iter] = np.mean(df_t_boot[args.outcome].values)
 
         if args.treatment != ['none']:
+
+            df_boot = get_liwc_df(df_boot, args.text_col, args.outcome)
+            df_t_boot = get_liwc_df(df_t_boot, args.text_col, args.outcome)
+            
             for i in range(len(treatments)):
                 treatment = treatments[i]
                 a = df_boot[treatment].values.flatten()
@@ -543,44 +543,40 @@ if args.bootstrap_iters > 0:
                     a_t = df_t_boot[treatment].values.flatten()
                     n1_t = np.sum(a_t)
                     n0_t = np.sum(1-a_t)
-                    tau_r_dict[treatment][iter] = np.nanmean(df_boot[args.outcome].values[a==1]) - np.nanmean(df_boot[args.outcome].values[a==0])
-                    tau_t_dict[treatment][iter] = np.nanmean(df_t_boot[args.outcome].values[a_t==1]) - np.nanmean(df_t_boot[args.outcome].values[a_t==0])
+                    tau_r_dict[treatment][iter] = np.mean(df_boot[args.outcome].values[a==1]) - np.mean(df_boot[args.outcome].values[a==0])
+                    tau_t_dict[treatment][iter] = np.mean(df_t_boot[args.outcome].values[a_t==1]) - np.mean(df_t_boot[args.outcome].values[a_t==0])
         else:
             mu_list[iter] = get_estimate(df_boot, df_random_train_boot, args.treatment[0])
 
     if args.treatment != ['none']: 
         for i in range(len(treatments)):
             treatment = treatments[i]
-            est_boot = np.nanmean(bootest_dict[treatment])
-            ci_025 = np.nanquantile(bootest_dict[treatment], 0.025)
-            ci_975 = np.nanquantile(bootest_dict[treatment], 0.975)
-            row = ['{:.3f} [{:.3f}, {:.3f}]'.format(est_boot, ci_025, ci_975)]
+            est_boot = np.mean(bootest_dict[treatment])
+            ci_025 = np.quantile(bootest_dict[treatment], 0.025)
+            ci_975 = np.quantile(bootest_dict[treatment], 0.975)
+            row = [treatment_names[i], '{:.3f} [{:.3f}, {:.3f}]'.format(est_boot, ci_025, ci_975)]
 
             if args.validate:
-                tau_r_025 = np.nanquantile(tau_r_dict[treatment], 0.025)
-                tau_r_975 = np.nanquantile(tau_r_dict[treatment], 0.975)
-                tau_t_025 = np.nanquantile(tau_t_dict[treatment], 0.025)
-                tau_t_975 = np.nanquantile(tau_t_dict[treatment], 0.975)
-                row += ['{:.3f} [{:.3f}, {:.3f}]'.format(np.nanmean(tau_r_dict[treatment]), tau_r_025, tau_r_975), 
-                        '{:.3f} [{:.3f}, {:.3f}]'.format(np.nanmean(tau_t_dict[treatment]), tau_t_025, tau_t_975)]
+                tau_r_025 = np.quantile(tau_r_dict[treatment], 0.025)
+                tau_r_975 = np.quantile(tau_r_dict[treatment], 0.975)
+                tau_t_025 = np.quantile(tau_t_dict[treatment], 0.025)
+                tau_t_975 = np.quantile(tau_t_dict[treatment], 0.975)
+                row += ['{:.3f} [{:.3f}, {:.3f}]'.format(np.mean(tau_r_dict[treatment]), tau_r_025, tau_r_975), 
+                        '{:.3f} [{:.3f}, {:.3f}]'.format(np.mean(tau_t_dict[treatment]), tau_t_025, tau_t_975)]
             
-            if args.output_outcomes:
-                row = ['{:.3f} '.format(np.nanmean(bootmu1_dict[treatment])), '{:.3f}'.format(np.nanmean(bootmu0_dict[treatment]))] + row
-
-            row = [treatment_names[i]] + row
             rows.append(row)
 
-    mu_boot = np.nanmean(mu_list)
-    mu_025 = np.nanquantile(mu_list, 0.025)
-    mu_975 = np.nanquantile(mu_list, 0.975)
+    mu_boot = np.mean(mu_list)
+    mu_025 = np.quantile(mu_list, 0.025)
+    mu_975 = np.quantile(mu_list, 0.975)
 
     if args.validate:
-        mu_r_boot = np.nanmean(mu_r_list)
-        mu_r_025 = np.nanquantile(mu_r_list, 0.025)
-        mu_r_975 = np.nanquantile(mu_r_list, 0.975)
-        mu_t_boot = np.nanmean(mu_t_list)
-        mu_t_025 = np.nanquantile(mu_t_list, 0.025)
-        mu_t_975 = np.nanquantile(mu_t_list, 0.975)
+        mu_r_boot = np.mean(mu_r_list)
+        mu_r_025 = np.quantile(mu_r_list, 0.025)
+        mu_r_975 = np.quantile(mu_r_list, 0.975)
+        mu_t_boot = np.mean(mu_t_list)
+        mu_t_025 = np.quantile(mu_t_list, 0.025)
+        mu_t_975 = np.quantile(mu_t_list, 0.975)
 
 else:
     if args.treatment != ['none']:
@@ -598,11 +594,11 @@ else:
                 a_t = df_t[treatment].values.flatten()
                 n1_t = np.sum(a_t)
                 n0_t = np.sum(1-a_t)
-                tau_r = np.nanmean(df[args.outcome].values[a==1]) - np.nanmean(df[args.outcome].values[a==0])
-                tau_t = np.nanmean(df_t[args.outcome].values[a_t==1]) - np.nanmean(df_t[args.outcome].values[a_t==0])
+                tau_r = np.mean(df[args.outcome].values[a==1]) - np.mean(df[args.outcome].values[a==0])
+                tau_t = np.mean(df_t[args.outcome].values[a_t==1]) - np.mean(df_t[args.outcome].values[a_t==0])
                 if args.ci:
-                    varhat_r = np.sum(((df[args.outcome].values-np.nanmean(df[args.outcome].values))[a==1])**2)/(n1**2) + np.sum(((df[args.outcome].values-np.nanmean(df[args.outcome].values))[a==0])**2)/(n0**2)
-                    varhat_t = np.sum(((df_t[args.outcome].values-np.nanmean(df_t[args.outcome].values))[a_t==1])**2)/(n1_t**2) + np.sum(((df_t[args.outcome].values-np.nanmean(df_t[args.outcome].values))[a_t==0])**2)/(n0_t**2)
+                    varhat_r = np.sum(((df[args.outcome].values-np.mean(df[args.outcome].values))[a==1])**2)/(n1**2) + np.sum(((df[args.outcome].values-np.mean(df[args.outcome].values))[a==0])**2)/(n0**2)
+                    varhat_t = np.sum(((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))[a_t==1])**2)/(n1_t**2) + np.sum(((df_t[args.outcome].values-np.mean(df_t[args.outcome].values))[a_t==0])**2)/(n0_t**2)
             
             if args.ci:
                 row = ['{:.3f} [{:.3f}, {:.3f}]'.format(est, est-1.96*np.sqrt(varhat), est+1.96*np.sqrt(varhat))]
