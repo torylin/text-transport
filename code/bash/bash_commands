@@ -1,0 +1,72 @@
+# Amazon clf
+python estimate.py --data-dir ../data/amazon_synthetic/ \
+    --random-csv pr_sampled_label_synthetic_numerical_coef_direct1.00.0_w_probs.csv \
+    --target-csv pt_sampled_label_synthetic_numerical_coef_direct1.00.0.csv --method clf --treatment posemo \
+    --outcome label_synthetic --text-col reviewText --estimate diff \
+    --lm-name all-mpnet-base-v2 --lm-library sentence-transformers --bootstrap-iters 100 \
+    --combination-type direct --lexicon-weight 1.0 --embedding-weight 0.0 --output-outcomes --validate
+
+# Amazon LM
+python estimate.py --data-dir ../data/amazon_synthetic/ \
+    --random-csv pr_sampled_label_synthetic_numerical_coef_direct1.00.0_w_probs.csv \
+    --target-csv pt_sampled_label_synthetic_numerical_coef_direct1.00.0.csv --method clm --treatment posemo \
+    --outcome label_synthetic --text-col reviewText --estimate diff \
+    --pr-lm-name existing --bootstrap-iters 100 \
+    --weights-truncate 0.025 --combination-type direct --lexicon-weight 1.0 --embedding-weight 0.0 \
+    --existing-probs --output-outcomes --validate
+
+# Amazon naive
+python estimate.py --data-dir ../data/amazon_synthetic/ \
+    --random-csv pr_sampled_label_synthetic_numerical_coef_direct1.00.0_w_probs.csv \
+    --target-csv pt_sampled_label_synthetic_numerical_coef_direct1.00.0.csv --method clf --treatment none \
+    --outcome label_synthetic --text-col reviewText --estimate naive \
+    --lm-name all-mpnet-base-v2 --lm-library sentence-transformers --bootstrap-iters 100 \
+    --combination-type direct --lexicon-weight 1.0 --embedding-weight 0.0 --output-outcomes --validate
+
+# EmoBank clf
+python estimate.py --data-dir ../data/emobank/ \
+    --random-csv highwriterintent_valence_liwc_w_probs_old.csv \
+    --target-csv lowwriterintent_valence_liwc_w_probs_old.csv --method clf --treatment automatic \
+    --outcome V_reader --text-col text --estimate diff \
+    --lm-name all-mpnet-base-v2 --lm-library sentence-transformers --bootstrap-iters 100 \
+    --output-outcomes --validate
+
+# EmoBank LM
+python estimate.py --data-dir ../data/emobank/ \
+    --random-csv highwriterintent_valence_liwc_w_probs_old.csv \
+    --target-csv lowwriterintent_valence_liwc_w_probs_old.csv --method clm --treatment none \
+    --outcome V_reader --text-col text --estimate diff \
+    --pr-lm-name existing --bootstrap-iters 100 \
+    --existing-probs --output-outcomes --validate
+
+# EmoBank naive
+python estimate.py --data-dir ../data/emobank/ \
+    --random-csv highwriterintent_valence_liwc_w_probs_old.csv \
+    --target-csv lowwriterintent_valence_liwc_w_probs_old.csv --method clf --treatment none \
+    --outcome V_reader --text-col text --estimate naive \
+    --lm-name all-mpnet-base-v2 --lm-library sentence-transformers --bootstrap-iters 100 \
+    --output-outcomes --validate
+
+# Hate Speech clf
+python estimate.py --data-dir ../data/hatespeech/ \
+    --random-csv reddit_liwc_w_probs_full.csv \
+    --target-csv gab_liwc_full.csv --method clf --treatment none \
+    --outcome hatespeech --text-col text --estimate diff \
+    --lm-name all-mpnet-base-v2 --lm-library sentence-transformers --bootstrap-iters 100 \
+    --output-outcomes --validate
+
+# Hate Speech LM
+python estimate.py --data-dir ../data/hatespeech/ \
+    --random-csv reddit_liwc_w_probs_full.csv \
+    --target-csv gab_liwc_full.csv --method clm --treatment none \
+    --outcome hatespeech --text-col text --estimate diff \
+    --pr-lm-name existing --bootstrap-iters 100 \
+    --existing-probs --output-outcomes --validate
+
+# Hate Speech naive
+python estimate.py --data-dir ../data/hatespeech/ \
+    --random-csv reddit_liwc_w_probs_full.csv \
+    --target-csv gab_liwc_full.csv --method clf --treatment none \
+    --outcome hatespeech --text-col text --estimate naive \
+    --lm-name all-mpnet-base-v2 --lm-library sentence-transformers --bootstrap-iters 100 \
+    --output-outcomes --validate
