@@ -16,8 +16,8 @@ import pandas as pd
 import time
 from tqdm import tqdm
 
-openai.organization = 'org-uCzLn1lPkfNNSs8oq6jIOWcG'
-openai.api_key = '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'
+openai.organization = ''
+openai.api_key = ''
 
 def get_num_tokens(string: str, encoding_name: str) -> int:
     """Returns the number of tokens in a text string."""
