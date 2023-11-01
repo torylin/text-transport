@@ -7,8 +7,8 @@ import pandas as pd
 import time
 from tqdm import tqdm
 
-openai.organization = 'org-uCzLn1lPkfNNSs8oq6jIOWcG'
-openai.api_key = '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'
+openai.organization = ''
+openai.api_key = ''
 
 batch_size = 50
 max_tokens = 249999
